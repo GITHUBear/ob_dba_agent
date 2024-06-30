@@ -1,0 +1,6 @@
+name: 'my_planning_planner'
+description: 'my planning planner'
+metadata:
+  type: 'PLANNER'
+  module: 'ob_dba_agent.ob_dba_agent.core.planner.my_planning_planner'
+  class: 'MyPlanningPlanner'

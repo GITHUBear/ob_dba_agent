@@ -1,0 +1,6 @@
+config/custom_key.toml
+logs/
+DB/
+.DS_Store
+__pycache__
+resources/

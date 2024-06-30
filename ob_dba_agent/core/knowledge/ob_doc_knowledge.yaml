@@ -1,0 +1,6 @@
+name: 'ob_doc_knowledge'
+description: 'oceanbase document knowledge'
+metadata:
+  type: 'KNOWLEDGE'
+  module: 'ob_dba_agent.ob_dba_agent.core.knowledge.ob_doc_knowledge'
+  class: 'ObDocKnowledge'

@@ -1,0 +1,7 @@
+info:
+  name: 'ob_dba_agent'
+  description: 'oceanbase dba agent'
+metadata:
+  type: 'AGENT'
+  module: 'agentuniverse.agent.default.peer_agent.peer_agent'
+  class: 'PeerAgent'
