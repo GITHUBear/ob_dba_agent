@@ -17,12 +17,8 @@ class PlanningAgentTest(unittest.TestCase):
 
         instance: Agent = AgentManager().get_instance_obj('ob_dba_planning_agent')
         output_object: OutputObject = instance.run(input='如何使用OceanBase进行TPCC测试')
-        res_info = f"\nPlanning agent execution user result is :\n"
-        for index, one_framework in enumerate(output_object.get_data('user')):
-            res_info += f"[{index + 1}] {one_framework} \n"
-        print(res_info)
-        res_info = f"\nPlanning agent execution knowledge result is :\n"
-        for index, one_framework in enumerate(output_object.get_data('knowledge')):
+        res_info = f"\nPlanning agent result is :\n"
+        for index, one_framework in enumerate(output_object.get_data('framework')):
             res_info += f"[{index + 1}] {one_framework} \n"
         print(res_info)
 

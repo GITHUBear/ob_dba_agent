@@ -39,7 +39,6 @@ class ObDBAPlanningAgent(Agent):
         """
         output = planner_result.get('output')
         output = parse_json_markdown(output)
-        planner_result['user'] = output['user']
-        planner_result['knowledge'] = output['knowledge']
+        planner_result['framework'] = output['framework']
         planner_result['thought'] = output['thought']
         return planner_result

@@ -7,8 +7,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# engine = MilvusSearchEngine(logger, "../../DB/milvus_rag.db")
-engine = MilvusSearchEngine(logger)
+engine = MilvusSearchEngine(logger, "../../DB/milvus_rag.db")
+# engine = MilvusSearchEngine(logger)
 
 class ObDocKnowledge(Knowledge):
     def __init__(self, **kwargs):
