@@ -4,6 +4,7 @@ from .document import Chunk
 from typing import List
 from pymilvus import MilvusClient, FieldSchema, DataType, CollectionSchema, Collection
 import logging
+import threading
 
 _model = None
 
@@ -25,6 +26,7 @@ class MilvusSearchEngine:
         config = SearchEngineConfig()
         self.db_file = db_path
         self.collection_corpus = config.milvus_corpus_collection_name
+        self.bge_lock = threading.Lock()
         self.bge_m3_model = get_model(config)
         self.dense_corpus_topk = config.milvus_dense_corpus_topk
         self.sparse_corpus_topk = config.milvus_sparse_corpus_topk
@@ -127,14 +129,15 @@ class MilvusSearchEngine:
             self.logger.info(f"create index success: title_sparse_idx")
 
     def _embed(self, texts: List[str], use_dense: bool, use_sparse: bool):
-        return self.bge_m3_model.encode(
-            texts,
-            batch_size=1,
-            max_length=512,
-            return_dense=use_dense,
-            return_sparse=use_sparse,
-            return_colbert_vecs=False,
-        )
+        with self.bge_lock:
+            return self.bge_m3_model.encode(
+                texts,
+                batch_size=1,
+                max_length=512,
+                return_dense=use_dense,
+                return_sparse=use_sparse,
+                return_colbert_vecs=False,
+            )
 
     def add_chunks(self, chunks: List[Chunk]):
         contents = [chunk.text for chunk in chunks]
@@ -193,17 +196,18 @@ class MilvusSearchEngine:
                 }
                 rerank_doc_id.append(id)
                 rerank_pair.append((query, doc_snippet["content"]))
-        scores_dict = self.bge_m3_model.compute_score(
-            rerank_pair,
-            batch_size=1,
-            max_query_length=512,
-            max_passage_length=8192,
-            weights_for_different_modes=[
-                self.dense_weight,
-                self.sparse_weight,
-                self.colbert_weight,
-            ],
-        )
+        with self.bge_lock:
+            scores_dict = self.bge_m3_model.compute_score(
+                rerank_pair,
+                batch_size=1,
+                max_query_length=512,
+                max_passage_length=8192,
+                weights_for_different_modes=[
+                    self.dense_weight,
+                    self.sparse_weight,
+                    self.colbert_weight,
+                ],
+            )
         scores = scores_dict["colbert+sparse+dense"]
         combined = list(zip(scores, rerank_doc_id))
         combined_sorted = sorted(combined, key=lambda x: x[0], reverse=True)

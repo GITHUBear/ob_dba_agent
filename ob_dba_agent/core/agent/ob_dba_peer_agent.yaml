@@ -1,0 +1,16 @@
+info:
+  name: 'ob_dba_peer_agent'
+  description: 'oceanbase dba peer agent'
+plan:
+  planner:
+    name: 'peer_planner'
+    eval_threshold: 60
+    retry_count: 1
+    planning: 'ob_dba_planning_agent'
+    executing: 'ob_dba_executing_agent'
+    expressing: 'ob_dba_expressing_agent'
+    reviewing: 'ob_dba_reviewing_agent'
+metadata:
+  type: 'AGENT'
+  module: 'agentuniverse.agent.default.peer_agent.peer_agent'
+  class: 'PeerAgent'

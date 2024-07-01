@@ -8,7 +8,7 @@ profile:
     temperature: 0.3
 plan:
   planner:
-    name: 'my_planning_planner'
+    name: 'planning_planner'
 memory:
   name: 'default_memory'
 metadata:

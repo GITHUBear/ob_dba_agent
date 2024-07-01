@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.output_parsers import StrOutputParser
@@ -8,6 +9,10 @@ from agentuniverse.agent.agent_model import AgentModel
 from agentuniverse.agent.input_object import InputObject
 from agentuniverse.agent.memory.chat_memory import ChatMemory
 from agentuniverse.agent.plan.planner.planner import Planner
+from agentuniverse.agent.action.tool.tool_manager import ToolManager
+from agentuniverse.agent.action.knowledge.knowledge import Knowledge
+from agentuniverse.agent.action.knowledge.knowledge_manager import KnowledgeManager
+from agentuniverse.agent.action.knowledge.store.document import Document
 from agentuniverse.base.util.memory_util import generate_memories
 from agentuniverse.base.util.prompt_util import process_llm_token
 from agentuniverse.llm.llm import LLM
@@ -16,11 +21,35 @@ from agentuniverse.prompt.prompt_manager import PromptManager
 from agentuniverse.prompt.prompt_model import AgentPromptModel
 
 
-class MyPlanningPlanner(Planner):
-    """Planning planner class."""
+class ObDBAExecutingPlanner(Planner):
+    """OceanBase DBA Executing planner class."""
 
-    def invoke(self, agent_model: AgentModel, planner_input: dict,
-               input_object: InputObject) -> dict:
+    def get_backgrounds(self, agent_model: AgentModel, planner_input: dict, input_object: InputObject):
+        action: dict = agent_model.action or dict()
+        tools: list = action.get('tool') or list()
+        knowledge: list = action.get('knowledge') or list()
+
+        action_result: list = list()
+
+        for tool_name in tools:
+            tool = ToolManager().get_instance_obj(tool_name)
+            if tool is None:
+                continue
+            tool_input = {key: input_object.get_data(key) for key in tool.input_keys}
+            action_result.append(tool.run(**tool_input))
+
+        for knowledge_name in knowledge:
+            knowledge: Knowledge = KnowledgeManager().get_instance_obj(knowledge_name)
+            if knowledge is None:
+                continue
+            # TODO: similarity_top_k is currently not changable.
+            knowledge_res: List[Document] = knowledge.query_knowledge(query_str=input_object.get_data(self.input_key), similarity_top_k=2)
+            for document in knowledge_res:
+                action_result.append(document.text)
+        
+        planner_input['background'] = planner_input['background'] or '' + "\n".join(action_result)
+
+    def invoke(self, agent_model: AgentModel, planner_input: dict, input_object: InputObject) -> dict:
         """Invoke the planner.
 
         Args:
@@ -30,9 +59,10 @@ class MyPlanningPlanner(Planner):
         Returns:
             dict: The planner result.
         """
-        print(f"############ {planner_input}")
+
         memory: ChatMemory = self.handle_memory(agent_model, planner_input)
-        print(f"############ {memory is None}")
+
+        self.get_backgrounds(agent_model, planner_input, input_object)
 
         llm: LLM = self.handle_llm(agent_model)
 
@@ -40,7 +70,6 @@ class MyPlanningPlanner(Planner):
         process_llm_token(llm, prompt.as_langchain(), agent_model.profile, planner_input)
 
         chat_history = memory.as_langchain().chat_memory if memory else InMemoryChatMessageHistory()
-        print(f"############### {chat_history}")
 
         chain_with_history = RunnableWithMessageHistory(
             prompt.as_langchain() | llm.as_langchain(),

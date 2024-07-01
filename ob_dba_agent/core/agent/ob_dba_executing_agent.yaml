@@ -1,0 +1,20 @@
+info:
+  name: 'ob_dba_executing_agent'
+  description: 'oceanbase dba executing agent'
+profile:
+  prompt_version: ob_dba_executing_agent.cn
+  llm_model:
+    name: 'qwen_llm'
+    temperature: 0.3
+plan:
+  planner:
+    name: 'ob_dba_executing_planner'
+memory:
+  name: 'default_memory'
+action:
+  knowledge:
+    - 'ob_doc_knowledge'
+metadata:
+  type: 'AGENT'
+  module: 'agentuniverse.agent.default.executing_agent.executing_agent'
+  class: 'ExecutingAgent'
