@@ -37,10 +37,23 @@ class PlanningAgentTest(unittest.TestCase):
             else:
                 peer_agent: Agent = AgentManager().get_instance_obj('ob_dba_peer_agent')
                 output_object: OutputObject = peer_agent.run(input=user_input, chat_history=history)
+
                 # res_info = f"\nPlanning agent result is :\n"
                 # for index, one_framework in enumerate(output_object.get_data('framework')):
                 #     res_info += f"[{index + 1}] {one_framework} \n"
-                print(output_object)
+                executing_result = output_object.get_data('executing_output')
+                expressing_result = output_object.get_data('expressing_output')
+
+                exec_res_info = "\n############# exec res #############\n"
+                for index, one_exec_res in enumerate(executing_result):
+                    one_exec_res_info = f"[{index + 1}] input: {one_exec_res['input']}\n"
+                    one_exec_res_info += f"[{index + 1}] output: {one_exec_res['output']}\n"
+                    exec_res_info += one_exec_res_info
+                print(exec_res_info)
+
+                express_res = "\n############# expressing res #############\n"
+                express_res += expressing_result
+                print(express_res)
 
 if __name__ == '__main__':
     unittest.main()
