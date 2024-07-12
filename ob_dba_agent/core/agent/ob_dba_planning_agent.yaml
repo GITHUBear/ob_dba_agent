@@ -13,5 +13,5 @@ memory:
   name: 'default_memory'
 metadata:
   type: 'AGENT'
-  module: 'ob_dba_agent.ob_dba_agent.core.agent.ob_dba_planning_agent'
+  module: 'ob_dba_agent.core.agent.ob_dba_planning_agent'
   class: 'ObDBAPlanningAgent'

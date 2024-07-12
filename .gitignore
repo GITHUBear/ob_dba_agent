@@ -4,3 +4,5 @@ DB/
 .DS_Store
 __pycache__
 resources/
+*.sqlite3
+jsons/

@@ -12,5 +12,5 @@ plan:
     reviewing: 'ob_dba_reviewing_agent'
 metadata:
   type: 'AGENT'
-  module: 'ob_dba_agent.ob_dba_agent.core.agent.ob_dba_peer_agent'
+  module: 'ob_dba_agent.core.agent.ob_dba_peer_agent'
   class: 'ObDBAPeerAgent'

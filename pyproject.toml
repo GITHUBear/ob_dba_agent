@@ -11,6 +11,9 @@ agentuniverse = "^0.0.9"
 flagembedding = "^1.2.10"
 pymilvus = "^2.4.4"
 tomli = "^2.0.1"
+pydantic = "^2.8.2"
+fastapi = "^0.111.0"
+pytesseract = "^0.3.10"
 
 [[tool.poetry.source]]
 name = "china"
