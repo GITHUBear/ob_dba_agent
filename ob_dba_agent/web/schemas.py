@@ -2,12 +2,16 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, E
 from sqlalchemy.orm import relationship
 
 from ob_dba_agent.web.database import Base
-
+import datetime
+from enum import Enum as stdEnum
 
 class Topic(Base):
     __tablename__ = "topics"
 
     id = Column(Integer, primary_key=True, index=True)
+    creator_id = Column(Integer)
+    creator_username = Column(String)
+    llm_classified_to = Column(String)
     title = Column(String)
     category_id = Column(Integer)
     created_at = Column(DateTime)
@@ -23,6 +27,7 @@ class Post(Base):
     username = Column(String)
     created_at = Column(DateTime)
     raw = Column(String)
+    cooked = Column(String)
     post_type = Column(String)
     category_slug = Column(String)
     post_number = Column(Integer)
@@ -31,7 +36,7 @@ class Post(Base):
 class UploadedFile(Base):
     __tablename__ = "uploaded_files"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     post_id = Column(Integer)
     name = Column(String)
     path = Column(String)
@@ -43,6 +48,13 @@ class UploadedFile(Base):
 
 class Task(Base):
     __tablename__ = "tasks"
+    
+    class Status(stdEnum):
+        PENDING = "pending"
+        PROCESSING = "processing"
+        DONE = "done"
+        FAILED = "failed"
+        CANCELED = "canceled"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     task_type = Column(String)
@@ -51,3 +63,6 @@ class Task(Base):
     post_id = Column(Integer, nullable=True)
     user_id = Column(Integer, nullable=True)
     task_status = Column(Enum("pending", "processing", "done", "failed", "canceled"), default="pending")
+
+    def delay_processed(self, minutes: int):
+        self.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=minutes)

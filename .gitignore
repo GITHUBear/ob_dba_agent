@@ -6,3 +6,5 @@ __pycache__
 resources/
 *.sqlite3
 jsons/
+downloaded/
+uploaded/

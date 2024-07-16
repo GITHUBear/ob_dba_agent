@@ -5,14 +5,50 @@ from PIL import Image
 import zipfile
 import tarfile
 import uuid
+
+import requests
+import json
+from urllib.parse import quote
+import unittest
+
 from os import path
+
+DOWNLOAD_SAVE_FOLDER = os.environ.get("DOWNLOAD_SAVE_FOLDER", "./downloaded")
+FORUM_API_KEY = os.environ.get("FORUM_API_KEY")
+FORUM_API_USERNAME = os.environ.get("FORUM_BOT_NAME", "与义")
+FORUM_URL = os.environ.get("FORUM_API_URL", "https://ask-pre.oceanbase.com")
+
+os.makedirs(DOWNLOAD_SAVE_FOLDER, exist_ok=True)
+
+from bs4 import BeautifulSoup
+
+
+def extract_files_from_html(html: str) -> dict[str, list[str]]:
+    """
+    extract_file_path_from_html extracts file path from HTML content
+    """
+    soup = BeautifulSoup(html)
+    files: list[str] = [a["href"] for a in soup.find_all("a", href=True)]
+    images: list[str] = [img["src"] for img in soup.find_all("img", src=True)]
+
+    return {"files": files, "images": images}
 
 
 def download_file(path: str, filename: str) -> str:
     """
     download_file downloads a file from a URL to local path
     """
-    pass
+    url = FORUM_URL + quote(path)
+    file_path = os.path.join(DOWNLOAD_SAVE_FOLDER, filename)
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(file_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        return file_path
+    else:
+        return None
 
 
 tar_mode_mapping = {
@@ -32,10 +68,9 @@ def extract_bundle(file_path: str) -> str:
     """
     file_ext = path.splitext(file_path)[1]
     file_name = path.basename(file_path)
-    new_file_name = path.join("uploaded", str(uuid.uuid4()) + "-" + file_name)
-    output_dir = file_path.join("uploaded", "extracted", file_name)
+    output_dir = path.join("uploaded", "extracted", file_name)
     if file_ext == ".zip":
-        with zipfile.ZipFile(new_file_name, "r") as zip_ref:
+        with zipfile.ZipFile(file_path, "r") as zip_ref:
             zip_ref.extractall(output_dir)
     elif file_ext in [
         ".tar",
@@ -43,7 +78,7 @@ def extract_bundle(file_path: str) -> str:
         ".bz2",
         ".xz",
     ]:
-        with tarfile.open(new_file_name, tar_mode_mapping[file_ext]) as tar:
+        with tarfile.open(file_path, tar_mode_mapping[file_ext]) as tar:
             tar.extractall(output_dir)
     else:
         raise ValueError("Unsupported file type")
@@ -62,3 +97,55 @@ def parse_image(image_path: str) -> str:
     parse_image extracts text from an image
     """
     return pytesseract.image_to_string(Image.open(image_path))
+
+
+def reply_post(topic_id: int, raw: str) -> int:
+    """
+    reply_post creates a new post in a topic
+    @param topic_id: ID of the topic to reply to
+    @param raw: raw content of the post, more than five words
+    """
+    headers = {
+        "Content-Type": "application/json; charset=UTF-8",
+        "Accept": "application/json; charset=UTF-8",
+        "Api-Key": FORUM_API_KEY,  # api key with at least topic write permission
+        "Api-Username": quote(FORUM_API_USERNAME, encoding="utf-8"),
+    }
+    payload = json.dumps(
+        {
+            "raw": raw,
+            "topic_id": topic_id,
+        }
+    )
+    url = f"{FORUM_URL}/posts.json"
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response.status_code
+
+
+class TestUtils(unittest.TestCase):
+
+    def test_parse_html(self):
+        html = """
+        <a href="/uploads/short-url/9tTa9jBId28YZhCDwQOB9Y6svSX.log">log file</a>
+        <img src="/uploads/default/original/2X/5/5c9d30f4b15c36e9cb76e2e7309e16c39322d8ec.png">
+        """
+        files = extract_files_from_html(html)
+        self.assertEqual(
+            files,
+            {
+                "files": ["/uploads/short-url/9tTa9jBId28YZhCDwQOB9Y6svSX.log"],
+                "images": [
+                    "/uploads/default/original/2X/5/5c9d30f4b15c36e9cb76e2e7309e16c39322d8ec.png"
+                ],
+            },
+        )
+
+    def test_download_file(self):
+        path = "/uploads/short-url/9tTa9jBId28YZhCDwQOB9Y6svSX.log"
+        filename = os.path.basename(path)
+        downloaded_file = download_file(path, filename)
+        os.path.exists(downloaded_file)
+
+
+if __name__ == "__main__":
+    unittest.main()
