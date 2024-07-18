@@ -61,7 +61,18 @@ def task_worker(no: int, **kwargs):
                 print(f"Task worker {no} waiting for task to be triggered")
                 time.sleep(random.randrange(10, 20))
                 continue
+            
+            if task.event == 'topic_destroyed':
+                topic: Topic | None = (
+                    db.query(Topic).where(Topic.id == task.topic_id).first()
+                )
+                if topic is not None:
+                    db.delete(topic)
 
+                task.task_status = task.Status.Done.value
+                db.commit()
+                continue
+            
             def delay_task():
                 task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=random.randrange(10, 20))
                 db.commit()

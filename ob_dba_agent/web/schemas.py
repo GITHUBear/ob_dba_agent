@@ -72,6 +72,7 @@ class Task(Base):
     post_id = Column(Integer, nullable=True)
     user_id = Column(Integer, nullable=True)
     task_status = Column(Enum("pending", "processing", "done", "failed", "canceled"), default="pending")
+    event = Column(String, nullable=True)
 
     def delay_processed(self, minutes: int):
         self.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=minutes)

@@ -30,6 +30,8 @@ def create_task(
         new_task.post_id = kwargs["post_id"]
     if "user_id" in kwargs:
         new_task.user_id = kwargs["user_id"]
+    if "event" in kwargs:
+        new_task.event = kwargs["event"]
 
     try:
         db.add(new_task)
