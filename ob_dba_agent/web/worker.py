@@ -69,14 +69,9 @@ def task_worker(no: int, **kwargs):
                 )
                 if topic is not None:
                     db.delete(topic)
-
-                task.task_status = task.Status.Done.value
+                task.done()
                 db.commit()
                 continue
-            
-            def delay_task():
-                task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=random.randrange(10, 20))
-                db.commit()
 
             topic: Topic | None = (
                 db.query(Topic).where(Topic.id == task.topic_id).first()
@@ -84,11 +79,12 @@ def task_worker(no: int, **kwargs):
             if topic is None:
                 print(f"Task worker {no} failed to find topic {task.topic_id}")
                 if task.task_status == task.Status.Pending.value:
-                    task.task_status = task.Status.Processing.value
-                    delay_task()
+                    task.processing()
+                    task.delay(minutes=1)
                 elif task.task_status == task.Status.Processing.value:
-                    task.task_status = task.Status.Failed.value
-                    db.commit()
+                    task.failed()
+                    
+                db.commit()
                 continue
 
             # Do some work here
@@ -105,13 +101,15 @@ def task_worker(no: int, **kwargs):
 
             if len(posts) == 0:
                 print(f"Topic {topic.id} has no posts, rescheduling task")
-                delay_task()
+                task.delay(minutes=5)
+                db.commit()
                 continue
 
             if posts[-1].username == bot_name:
                 # User has not replied
                 print(f"User has not replied topic {topic.id} yet, rescheduling task")
-                delay_task()
+                task.delay(minutes=10)
+                db.commit()
                 continue
 
             files: list[UploadedFile] = (
@@ -144,7 +142,7 @@ def task_worker(no: int, **kwargs):
 
             chat_history[0]["发言"] = topic.title + "\n" + chat_history[0]["发言"]
             
-            print(chat_history)
+            print("chat_history", chat_history)
             
             query_content = chat_history.pop()["发言"]
                         
@@ -171,7 +169,7 @@ def task_worker(no: int, **kwargs):
                 db.commit()
 
             if topic.llm_classified_to == Topic.Clf.Casual.value:
-                task.task_status = task.Status.Done.value
+                task.done()
                 db.commit()
             elif topic.llm_classified_to == Topic.Clf.Features.value:
                 # RAG here
@@ -181,14 +179,14 @@ def task_worker(no: int, **kwargs):
                     reply_post(topic_id=topic.id, raw=answer)
                     if len(chat_history) > 2:
                         # At most reply two posts
-                        task.task_status = task.Status.Done.value
+                        task.done()
                     else:
-                        task.task_status = task.Status.Processing.value
-                    db.commit()
+                        task.processing()
+                        task.delay()
                 except Exception as e:
                     print(e)
-                    # task.task_status = "failed"
-                    task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    task.delay()
+                finally:
                     db.commit()
             elif topic.llm_classified_to == Topic.Clf.Diagnostic.value:                
                 log_uploaded = False
@@ -203,8 +201,8 @@ def task_worker(no: int, **kwargs):
                         output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
                         answer = output_object.get_data("output")
                         reply_post(topic_id=topic.id, raw=answer)
-                        task.task_status = task.Status.Processing.value
-                        task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                        task.processing()
+                        task.delay()
                         print(answer)
                     else:
                         print("questioning agent: ", query_content, chat_history)
@@ -220,18 +218,17 @@ def task_worker(no: int, **kwargs):
                             answer = doc_rag(query_content, chat_history, rewritten=rewritten)
                             print(answer)
                             reply_post(topic_id=topic.id, raw=answer)
-                            task.task_status = task.Status.Done.value
+                            task.done()
                         else:
                             questions = output_object.get_data("questions")
                             answer = '\n'.join(questions)
                             reply_post(topic_id=topic.id, raw=answer)
                             print(answer)
-                            task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
-                    db.commit()
+                            task.delay()
                 except Exception as e:
                     print(e)
-                    # task.task_status = "failed"
-                    task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    task.delay()
+                finally:
                     db.commit()
 
             if debug:

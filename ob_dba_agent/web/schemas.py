@@ -74,5 +74,14 @@ class Task(Base):
     task_status = Column(Enum("pending", "processing", "done", "failed", "canceled"), default="pending")
     event = Column(String, nullable=True)
 
-    def delay_processed(self, minutes: int):
-        self.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=minutes)
+    def delay(self, minutes: int = 1, seconds: int = 0, hours: int = 0):
+        self.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=minutes, seconds=seconds, hours=hours)
+    
+    def done(self):
+        self.task_status = self.Status.Done.value
+    
+    def failed(self):
+        self.task_status = self.Status.Failed.value
+        
+    def processing(self):
+        self.task_status = self.Status.Processing.value

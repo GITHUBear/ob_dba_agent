@@ -82,8 +82,12 @@ async def handle_post(db: Session, post: Post):
         db.add(new_post)
     except:
         logger.error("Failed to add post to database")
+
     if post.username == FORUM_API_USERNAME:
+        db.commit()
+        db.refresh(new_post)
         return new_post
+
     files = extract_files_from_html(post.cooked)
     for image in files["images"]:
         file_name = os.path.basename(image)
