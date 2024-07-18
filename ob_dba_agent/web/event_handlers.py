@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 import os
 import logging
 import subprocess
+from ob_dba_agent.web.utils import FORUM_API_USERNAME
 
 from ob_dba_agent.web.utils import (
     extract_files_from_html,
@@ -81,7 +82,8 @@ async def handle_post(db: Session, post: Post):
         db.add(new_post)
     except:
         logger.error("Failed to add post to database")
-
+    if post.username == FORUM_API_USERNAME:
+        return new_post
     files = extract_files_from_html(post.cooked)
     for image in files["images"]:
         file_name = os.path.basename(image)

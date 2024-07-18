@@ -48,6 +48,7 @@ def task_worker(no: int, **kwargs):
     debug = kwargs.get("debug", False)
     bot_name = kwargs.get("bot_name", "序风")
     while True:
+        time.sleep(random.randrange(10, 20))
         with SessionLocal() as db:
             preds = [Task.task_status.in_([Task.Status.Pending.value, Task.Status.Processing.value]), Task.task_type == "topic"]
             if not debug:

@@ -24,13 +24,19 @@ os.makedirs(DOWNLOAD_SAVE_FOLDER, exist_ok=True)
 from bs4 import BeautifulSoup
 
 
-def extract_files_from_html(html: str) -> dict[str, list[str]]:
+def extract_files_from_html(
+    html: str, filter_uploads: bool = True
+) -> dict[str, list[str]]:
     """
     extract_file_path_from_html extracts file path from HTML content
     """
     soup = BeautifulSoup(html)
     files: list[str] = [a["href"] for a in soup.find_all("a", href=True)]
     images: list[str] = [img["src"] for img in soup.find_all("img", src=True)]
+
+    if filter_uploads:
+        files = [f for f in files if f.startswith("/uploads")]
+        images = [i for i in images if i.startswith("/uploads")]
 
     return {"files": files, "images": images}
 
