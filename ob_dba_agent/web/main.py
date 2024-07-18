@@ -56,22 +56,22 @@ async def repost_entry(
             seconds=random.randrange(10, 20),
             # minutes=random.randrange(10, 20),
         )
-        tasks.add_task(handle_topic, db, req.topic)
+        tasks.add_task(handle_topic, db, req.topic, event=x_discourse_event)
     elif req.post:
         kwargs["topic_id"] = req.post.topic_id
         kwargs["post_id"] = req.post.id
         kwargs["task_type"] = "post"
-        tasks.add_task(handle_post, db, req.post)
+        tasks.add_task(handle_post, db, req.post, event=x_discourse_event)
     elif req.solved:
         kwargs["topic_id"] = req.solved.id
         kwargs["task_type"] = "solved"
-        tasks.add_task(handle_solved, db, req.solved)
+        tasks.add_task(handle_solved, db, req.solved, event=x_discourse_event)
     elif req.like:
         kwargs["topic_id"] = req.like.post.topic_id
         kwargs["post_id"] = req.like.post.id
         kwargs["user_id"] = req.like.user.id
         kwargs["task_type"] = "like"
-        tasks.add_task(handle_like, db, req.like)
+        tasks.add_task(handle_like, db, req.like, event=x_discourse_event)
     elif req.ping:
         return "ok"
     task = create_task(db, **kwargs)

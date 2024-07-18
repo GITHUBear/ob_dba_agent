@@ -58,19 +58,10 @@ def task_worker(no: int, **kwargs):
                 .filter(*preds)
                 .first()
             )
+            
             if task is None:
                 print(f"Task worker {no} waiting for task to be triggered")
                 time.sleep(random.randrange(10, 20))
-                continue
-            
-            if task.event == 'topic_destroyed':
-                topic: Topic | None = (
-                    db.query(Topic).where(Topic.id == task.topic_id).first()
-                )
-                if topic is not None:
-                    db.delete(topic)
-                task.done()
-                db.commit()
                 continue
 
             topic: Topic | None = (

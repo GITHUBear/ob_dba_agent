@@ -33,6 +33,8 @@ def create_task(
         new_task.user_id = kwargs["user_id"]
     if "event" in kwargs:
         new_task.event = kwargs["event"]
+        if new_task.event.endswith("destroyed"):
+            new_task.done()
 
     try:
         db.add(new_task)
@@ -44,8 +46,13 @@ def create_task(
     return new_task
 
 
-async def handle_topic(db: Session, topic: Topic):
-    print("topic", topic)
+async def handle_topic(db: Session, topic: Topic, event: str | None = None):
+    print("event", event, "topic", topic)
+    if event == 'topic_destroyed':
+        db.query(schemas.Topic).filter(schemas.Topic.id == topic.id).delete()
+        db.commit()
+        return
+    # another event is topic_created
     new_topic = schemas.Topic(
         id=topic.id,
         creator_id=topic.created_by.id,
@@ -64,8 +71,13 @@ async def handle_topic(db: Session, topic: Topic):
     return new_topic
 
 
-async def handle_post(db: Session, post: Post):
-    print("post", post)
+async def handle_post(db: Session, post: Post, event: str | None = None):
+    print("event", event, "post", post)
+    if event == 'post_destroyed':
+        db.query(schemas.Post).filter(schemas.Post.id == post.id).delete()
+        db.commit()
+        return
+    # another event is post_created
     new_post = schemas.Post(
         id=post.id,
         topic_id=post.topic_id,
