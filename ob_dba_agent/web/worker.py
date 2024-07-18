@@ -49,7 +49,7 @@ def task_worker(no: int, **kwargs):
     bot_name = kwargs.get("bot_name", "序风")
     while True:
         with SessionLocal() as db:
-            preds = [Task.task_status.in_(Task.Status.Pending.value, Task.Status.Processing.value), Task.task_type == "topic"]
+            preds = [Task.task_status.in_([Task.Status.Pending.value, Task.Status.Processing.value]), Task.task_type == "topic"]
             if not debug:
                 preds.append(Task.triggered_at <= datetime.datetime.now())
             task: Task | None = (
@@ -145,11 +145,11 @@ def task_worker(no: int, **kwargs):
             
             print(chat_history)
             
-            query_content = chat_history.pop()
+            query_content = chat_history.pop()["发言"]
                         
             rewritten = query_content
             # Pass to guard agent
-            if topic.llm_classified_to == "":
+            if topic.llm_classified_to is None:
                 print(f"Guard Agent: {query_content}")
                 guard_agent: Agent = AgentManager().get_instance_obj("ob_dba_guard_agent")
                 output_object: OutputObject = guard_agent.run(
@@ -182,7 +182,7 @@ def task_worker(no: int, **kwargs):
                         # At most reply two posts
                         task.task_status = task.Status.Done.value
                     else:
-                        task.task_status = task.Status.Failed.value
+                        task.task_status = task.Status.Processing.value
                     db.commit()
                 except Exception as e:
                     print(e)
@@ -196,13 +196,13 @@ def task_worker(no: int, **kwargs):
                         log_uploaded = True
                         break
                 try:
-                    if not log_uploaded:
+                    if not log_uploaded and task.task_status == task.Status.Pending.value:
                         print("obdiag classification agent: ", rewritten)
                         obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
                         output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
                         answer = output_object.get_data("output")
                         reply_post(topic_id=topic.id, raw=answer)
-                        task.task_status = task.Status.Failed.value
+                        task.task_status = task.Status.Processing.value
                         task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
                         print(answer)
                     else:
@@ -225,7 +225,6 @@ def task_worker(no: int, **kwargs):
                             answer = '\n'.join(questions)
                             reply_post(topic_id=topic.id, raw=answer)
                             print(answer)
-                            task.task_status = task.Status.Failed.value
                             task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
                     db.commit()
                 except Exception as e:

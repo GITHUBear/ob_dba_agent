@@ -1,4 +1,5 @@
 # brew install tesseract first
+# apt-get install tesseract-ocr
 import pytesseract
 import os
 from PIL import Image
@@ -88,7 +89,7 @@ def extract_bundle(file_path: str) -> str:
 
 # If you don't have tesseract executable in your PATH, include the following:
 pytesseract.pytesseract.tesseract_cmd = os.environ.get(
-    "TESSERACT_BIN_PATH", "/opt/homebrew/bin/tesseract"
+    "TESSERACT_BIN_PATH", "/usr/bin/tesseract"
 )
 
 
@@ -145,6 +146,12 @@ class TestUtils(unittest.TestCase):
         filename = os.path.basename(path)
         downloaded_file = download_file(path, filename)
         os.path.exists(downloaded_file)
+
+    def test_reply_post(self):
+        topic_id = 35604704
+        raw = "Hello, world!"
+        response = reply_post(topic_id, raw)
+        self.assertEqual(response, 200)
 
 
 if __name__ == "__main__":

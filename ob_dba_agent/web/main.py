@@ -1,17 +1,17 @@
 from agentuniverse.base.agentuniverse import AgentUniverse
 
-# AgentUniverse().start()
+AgentUniverse().start()
 from agentuniverse.agent_serve.service_manager import ServiceManager
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, BackgroundTasks, Annotated, Header
+from fastapi import FastAPI, Depends, BackgroundTasks, Header
 from sqlalchemy.orm import Session
 from ob_dba_agent.web.models import *
 from ob_dba_agent.web.schemas import Base
 from ob_dba_agent.web.database import engine, get_db
 from ob_dba_agent.web.event_handlers import *
 from ob_dba_agent.web.worker import task_worker
-
+from typing_extensions import Annotated
 from typing import Union
 import datetime
 import os
@@ -32,8 +32,8 @@ async def lifespan(app: FastAPI):
     pass
 
 
-# app = FastAPI(lifespan=lifespan)
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+# app = FastAPI()
 
 
 @app.post("/repost/entry")
@@ -72,6 +72,8 @@ async def repost_entry(
         kwargs["user_id"] = req.like.user.id
         kwargs["task_type"] = "like"
         tasks.add_task(handle_like, db, req.like)
+    elif req.ping:
+        return "ok"
     task = create_task(db, **kwargs)
     return task.id
 

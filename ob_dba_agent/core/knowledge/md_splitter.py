@@ -24,7 +24,12 @@ class LocalFsMdSplitter(DocSplitter):
         chunks = []
         with open(doc.doc_url, 'r', encoding='utf-8') as f:
             content = f.read()
-            for chunk in self.md_splitter.split_text(content):
+            lc_chunks = self.md_splitter.split_text(content)
+            for chunk in lc_chunks:
+                if 'Header1' in chunk.metadata:
+                    doc.name = chunk.metadata['Header1']
+                    break
+            for chunk in lc_chunks:
                 my_chunk = Chunk(doc, chunk.page_content, list(chunk.metadata.values()))
                 my_chunk.gen_id()
                 chunks.append(my_chunk)
