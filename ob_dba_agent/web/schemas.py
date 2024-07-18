@@ -7,6 +7,11 @@ from enum import Enum as stdEnum
 
 class Topic(Base):
     __tablename__ = "topics"
+    
+    class Clf(stdEnum):
+        Casual = "casual"
+        Features = "features"
+        Diagnostic = "diagnostic"
 
     id = Column(Integer, primary_key=True, index=True)
     creator_id = Column(Integer)
@@ -35,6 +40,10 @@ class Post(Base):
 
 class UploadedFile(Base):
     __tablename__ = "uploaded_files"
+    
+    class FileType(stdEnum):
+        Image = "image"
+        Archive = "archive"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     post_id = Column(Integer)
@@ -50,11 +59,11 @@ class Task(Base):
     __tablename__ = "tasks"
     
     class Status(stdEnum):
-        PENDING = "pending"
-        PROCESSING = "processing"
-        DONE = "done"
-        FAILED = "failed"
-        CANCELED = "canceled"
+        Pending = "pending"
+        Processing = "processing"
+        Done = "done"
+        Failed = "failed"
+        Canceled = "canceled"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     task_type = Column(String)

@@ -40,13 +40,16 @@ async def repost_entry(
     req: ForumEvent, tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     # Dispatch the request to different services
+    print("Received request", req)
     kwargs = {}
     if req.topic:
         kwargs["topic_id"] = req.topic.id
         kwargs["task_type"] = "topic"
         # Triggered in 10 ~ 20 minutes
-        kwargs["triggered_at"] = datetime.datetime.now()
-        #  + datetime.timedelta(minutes=random.randrange(10, 20))
+        kwargs["triggered_at"] = datetime.datetime.now() + datetime.timedelta(
+            seconds=random.randrange(10, 20),
+            minutes=random.randrange(10, 20),
+        )
         tasks.add_task(handle_topic, db, req.topic)
     elif req.post:
         kwargs["topic_id"] = req.post.topic_id

@@ -68,3 +68,4 @@ class ForumEvent(BaseModel):
     post: Post | None = None
     solved: Solved | None = None
     like: Like | None = None
+    ping: str | None = None  # {"ping": "OK"}

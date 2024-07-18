@@ -9,9 +9,8 @@ from agentuniverse.agent.action.knowledge.store.document import Document
 from agentuniverse.agent.agent import Agent
 from agentuniverse.agent.action.knowledge.knowledge_manager import KnowledgeManager
 from agentuniverse.agent.action.knowledge.knowledge import Knowledge
-from ob_dba_agent.core.knowledge.document import Chunk
+from ob_dba_agent.web.utils import reply_post
 
-import json
 import datetime
 
 def doc_rag(query: str, chat_history: list[dict], **kwargs) -> str:
@@ -50,7 +49,7 @@ def task_worker(no: int, **kwargs):
     bot_name = kwargs.get("bot_name", "序风")
     while True:
         with SessionLocal() as db:
-            preds = [Task.task_status == Task.Status.PENDING.value, Task.task_type == "topic"]
+            preds = [Task.task_status.in_(Task.Status.Pending.value, Task.Status.Processing.value), Task.task_type == "topic"]
             if not debug:
                 preds.append(Task.triggered_at <= datetime.datetime.now())
             task: Task | None = (
@@ -72,8 +71,12 @@ def task_worker(no: int, **kwargs):
             )
             if topic is None:
                 print(f"Task worker {no} failed to find topic {task.topic_id}")
-                task.task_status = "failed"
-                db.commit()
+                if task.task_status == task.Status.Pending.value:
+                    task.task_status = task.Status.Processing.value
+                    delay_task()
+                elif task.task_status == task.Status.Processing.value:
+                    task.task_status = task.Status.Failed.value
+                    db.commit()
                 continue
 
             # Do some work here
@@ -131,61 +134,94 @@ def task_worker(no: int, **kwargs):
             
             print(chat_history)
             
-            query_content = chat_history[-1]["发言"]
-            chat_history.pop()
-
+            query_content = chat_history.pop()
+                        
+            rewritten = query_content
             # Pass to guard agent
-            print(f"Guard Agent: {query_content}")
-            guard_agent: Agent = AgentManager().get_instance_obj("ob_dba_guard_agent")
-            output_object: OutputObject = guard_agent.run(
-                input=query_content, history=chat_history,
-            )
-            question_type = output_object.get_data("type")
-            rewritten = output_object.get_data("rewrite")
-            
-            print(f"Question type: {question_type}, rewritten: {rewritten}")
+            if topic.llm_classified_to == "":
+                print(f"Guard Agent: {query_content}")
+                guard_agent: Agent = AgentManager().get_instance_obj("ob_dba_guard_agent")
+                output_object: OutputObject = guard_agent.run(
+                    input=query_content, history=chat_history,
+                )
+                question_type = output_object.get_data("type")
+                rewritten = output_object.get_data("rewrite")
+                
+                print(f"Question type: {question_type}, rewritten: {rewritten}")
 
-            if question_type == "闲聊":
-                # task.task_status = "done"
-                topic.llm_classified_to = "CasualChat"
+                if question_type == "闲聊":
+                    topic.llm_classified_to = Topic.Clf.Casual.value
+                elif question_type == "特性问题":
+                    topic.llm_classified_to = Topic.Clf.Features.value
+                elif question_type == "诊断问题":
+                    topic.llm_classified_to = Topic.Clf.Diagnostic.value
+
                 db.commit()
-            elif question_type == "特性问题":
-                # task.task_status = "processing"
-                topic.llm_classified_to = "Features"
+
+            if topic.llm_classified_to == Topic.Clf.Casual.value:
+                task.task_status = task.Status.Done.value
+                db.commit()
+            elif topic.llm_classified_to == Topic.Clf.Features.value:
                 # RAG here
                 answer = doc_rag(query_content, chat_history, rewritten=rewritten)
                 print(answer)
-                
-                db.commit()
-            elif question_type == "诊断问题":
-                topic.llm_classified_to = "Diagnostic"
-                
+                try:
+                    reply_post(topic_id=topic.id, raw=answer)
+                    if len(chat_history) > 2:
+                        # At most reply two posts
+                        task.task_status = task.Status.Done.value
+                    else:
+                        task.task_status = task.Status.Failed.value
+                    db.commit()
+                except Exception as e:
+                    print(e)
+                    # task.task_status = "failed"
+                    task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    db.commit()
+            elif topic.llm_classified_to == Topic.Clf.Diagnostic.value:                
                 log_uploaded = False
                 for f in files:
-                    if f.file_type == 'archive' and f.processed:
+                    if f.file_type == UploadedFile.FileType.Archive.value and f.processed:
                         log_uploaded = True
                         break
-                
-                if not log_uploaded:
-                    print("obdiag classification agent: ", rewritten)
-                    obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
-                    output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
-                    print(output_object.get_data("output"))
-                else:
-                    print("questioning agent: ", query_content, chat_history)
-                    questioning_agent: Agent = AgentManager().get_instance_obj("ob_dba_questioning_agent")
-                    polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
-                    output_object: OutputObject = questioning_agent.run(
-                        input=query_content, 
-                        chat_history=polished_history
-                    )
-                    complete = output_object.get_data("complete")
-                    print("问题", "可解决" if complete else "不可解决")
-                    if complete:
-                        answer = doc_rag(query_content, chat_history, rewritten=rewritten)
+                try:
+                    if not log_uploaded:
+                        print("obdiag classification agent: ", rewritten)
+                        obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
+                        output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
+                        answer = output_object.get_data("output")
+                        reply_post(topic_id=topic.id, raw=answer)
+                        task.task_status = task.Status.Failed.value
+                        task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
                         print(answer)
                     else:
-                        print("Ask more questions: ", output_object.get_data("questions"))
+                        print("questioning agent: ", query_content, chat_history)
+                        questioning_agent: Agent = AgentManager().get_instance_obj("ob_dba_questioning_agent")
+                        polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
+                        output_object: OutputObject = questioning_agent.run(
+                            input=query_content, 
+                            chat_history=polished_history
+                        )
+                        complete = output_object.get_data("complete")
+                        print("问题", "可解决" if complete else "不可解决")
+                        if complete:
+                            answer = doc_rag(query_content, chat_history, rewritten=rewritten)
+                            print(answer)
+                            reply_post(topic_id=topic.id, raw=answer)
+                            task.task_status = task.Status.Done.value
+                        else:
+                            questions = output_object.get_data("questions")
+                            answer = '\n'.join(questions)
+                            reply_post(topic_id=topic.id, raw=answer)
+                            print(answer)
+                            task.task_status = task.Status.Failed.value
+                            task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    db.commit()
+                except Exception as e:
+                    print(e)
+                    # task.task_status = "failed"
+                    task.triggered_at = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    db.commit()
 
             if debug:
                 return

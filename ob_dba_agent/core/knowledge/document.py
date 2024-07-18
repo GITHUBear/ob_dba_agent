@@ -5,11 +5,11 @@ class DocumentBase:
     def __init__(self, url: str, path_name_handler = None):
         self.url = url
         self.path_name_handler = path_name_handler
-        protocal_split_idx = url.find('://')
-        if -1 == protocal_split_idx:
+        protocol_split_idx = url.find('://')
+        if -1 == protocol_split_idx:
             self.url_protocal = ''
         else:
-            self.url_protocal = url[0:protocal_split_idx]
+            self.url_protocal = url[0:protocol_split_idx]
     
     def __repr__(self) -> str:
         return f"[DocumentBase] url={self.url} url_protocal={self.url_protocal}"
@@ -27,13 +27,13 @@ class Document:
     def __repr__(self) -> str:
         return f"[Document] doc_url={self.doc_url} url_path_list={self.url_path_list} name={self.name}"
     
-    def doc_url_enhanse(self):
+    def doc_url_enhance(self):
         if self.doc_base.path_name_handler is not None:
             return ' - '.join([self.doc_base.path_name_handler(path) for path in self.url_path_list])
         else:
             return ' - '.join(self.url_path_list)
     
-    def get_enhansed_doc_name(self):
+    def get_enhanced_doc_name(self):
         if self.doc_base.path_name_handler is not None:
             return self.doc_base.path_name_handler(self.name)
         else:
@@ -44,7 +44,7 @@ class Chunk:
         self.doc = doc
         self.text = text
         if len(subtitles) == 0:
-            subtitles.append(self.doc.get_enhansed_doc_name())
+            subtitles.append(self.doc.get_enhanced_doc_name())
         self.subtitles = subtitles
         self.title = subtitles[-1]
         
@@ -67,13 +67,13 @@ class Chunk:
         return ' - '.join(self.subtitles)
     
     def get_enhanced_url_for_embed(self):
-        return self.doc.doc_url_enhanse()
+        return self.doc.doc_url_enhance()
     
     def get_metadata(self) -> dict:
         return {
             "doc_url": self.doc.doc_url,
             "doc_name": self.doc.name,
-            "enhance_url": self.doc.doc_url_enhanse(),
+            "enhance_url": self.doc.doc_url_enhance(),
             "chunk_title": self.title,
             "enhanced_title": ' -> '.join(self.subtitles)
         }
@@ -82,7 +82,7 @@ class Chunk:
         return {
             "doc_url": self.doc.doc_url,
             "doc_name": self.doc.name,
-            "enhance_url": self.doc.doc_url_enhanse(),
+            "enhance_url": self.doc.doc_url_enhance(),
             "chunk_title": self.title,
             "enhanced_title": ' -> '.join(self.subtitles),
             "document": self.text,
