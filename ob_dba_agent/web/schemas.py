@@ -91,3 +91,14 @@ class Task(Base):
         
     def processing(self):
         self.task_status = self.Status.Processing.value
+
+
+class Like(Base):
+    __tablename__ = "likes"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    topic_id = Column(Integer)
+    post_id = Column(Integer)
+    username = Column(String)
+    user_id = Column(Integer)
+    created_at = Column(DateTime)

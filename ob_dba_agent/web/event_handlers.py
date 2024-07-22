@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 import os
 import logging
 import subprocess
+import datetime
 from ob_dba_agent.web.utils import FORUM_API_USERNAME
 
 from ob_dba_agent.web.utils import (
@@ -53,13 +54,11 @@ def create_task(
         db.commit()
         db.refresh(new_task)
     except Exception as e:
-        logger.error(e)
-        logger.error("Failed to add task to database")
+        logger.error("Failed to add task to database", e)
     return new_task
 
 
 async def handle_topic(db: Session, topic: Topic, event: str | None = None):
-    print("event", event, "topic", topic)
     if event == "topic_destroyed":
         db.query(schemas.Topic).filter(schemas.Topic.id == topic.id).delete()
         db.commit()
@@ -78,13 +77,12 @@ async def handle_topic(db: Session, topic: Topic, event: str | None = None):
         db.add(new_topic)
         db.commit()
         db.refresh(new_topic)
-    except:
-        logger.error("Failed to add topic to database")
+    except Exception as e:
+        logger.error("Failed to add topic to database", e)
     return new_topic
 
 
 async def handle_post(db: Session, post: Post, event: str | None = None):
-    print("event", event, "post", post)
     if event == "post_destroyed":
         db.query(schemas.Post).filter(schemas.Post.id == post.id).delete()
         db.commit()
@@ -104,8 +102,8 @@ async def handle_post(db: Session, post: Post, event: str | None = None):
     )
     try:
         db.add(new_post)
-    except:
-        logger.error("Failed to add post to database")
+    except Exception as e:
+        logger.error("Failed to add post to database", e)
 
     if post.username == FORUM_API_USERNAME:
         db.commit()
@@ -132,8 +130,7 @@ async def handle_post(db: Session, post: Post, event: str | None = None):
             )
             db.add(new_file)
         except Exception as e:
-            logger.error(e)
-            logger.error("Failed to add image to database")
+            logger.error("Failed to add image to database", e)
 
     for file in files["files"]:
         try:
@@ -168,20 +165,18 @@ async def handle_post(db: Session, post: Post, event: str | None = None):
                 )
             db.add(new_file)
         except Exception as e:
-            logger.error(e)
-            logger.error("Failed to add archive to database")
+            logger.error("Failed to add archive to database", e)
 
     try:
         db.commit()
         db.refresh(new_post)
-    except:
-        logger.error("Failed to commit post to database")
+    except Exception as e:
+        logger.error("Failed to commit post to database", e)
 
     return new_post
 
 
 async def handle_solved(db: Session, solved: Solved, event: str | None = None):
-    print("solved", solved)
     try:
         task: schemas.Task | None = (
             db.query(schemas.Task)
@@ -196,11 +191,38 @@ async def handle_solved(db: Session, solved: Solved, event: str | None = None):
             task.done()
             db.commit()
     except Exception as e:
-        logger.error(e)
-        logger.error("Failed to mark task as done")
+        logger.error("Failed to mark task as done", e)
     return solved
 
 
 async def handle_like(db: Session, like: Like, event: str | None = None):
-    print("like", like)
-    return like
+    try:
+        topic_id = like.post.topic_id
+        post_id = like.post.id
+        user_id = like.user.id
+        username = like.user.name
+        like_obj: schemas.Like | None = (
+            db.query(schemas.Like)
+            .where(
+                schemas.Like.post_id == post_id,
+                schemas.Like.topic_id == topic_id,
+                schemas.Like.user_id == user_id,
+            )
+            .first()
+        )
+        if like_obj:
+            return like_obj
+
+        new_like = schemas.Like(
+            post_id=post_id,
+            topic_id=topic_id,
+            user_id=user_id,
+            username=username,
+            created_at=datetime.datetime.now(),
+        )
+        db.add(new_like)
+        db.commit()
+        db.refresh(new_like)
+        return new_like
+    except Exception as e:
+        logger.error("Failed to handle like event", e)
