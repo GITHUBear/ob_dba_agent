@@ -12,7 +12,19 @@ from ob_dba_agent.web.utils import (
     extract_bundle,
     download_file,
 )
+
 logger = logging.getLogger(__name__)
+
+
+log_analyze_msg = """用户上传的文件 {file_name} 解压后的目录结构和使用 obdiag 进行离线日志分析后得到的结果如下 (用 === 包裹):
+===
+{content}
+==="""
+
+image_parse_msg = """用户上传的图片 {file_name} 使用 OCR 提取出来的文本内容如下 (用 === 包裹):
+===
+{image_content}
+==="""
 
 
 def create_task(
@@ -48,7 +60,7 @@ def create_task(
 
 async def handle_topic(db: Session, topic: Topic, event: str | None = None):
     print("event", event, "topic", topic)
-    if event == 'topic_destroyed':
+    if event == "topic_destroyed":
         db.query(schemas.Topic).filter(schemas.Topic.id == topic.id).delete()
         db.commit()
         return
@@ -73,7 +85,7 @@ async def handle_topic(db: Session, topic: Topic, event: str | None = None):
 
 async def handle_post(db: Session, post: Post, event: str | None = None):
     print("event", event, "post", post)
-    if event == 'post_destroyed':
+    if event == "post_destroyed":
         db.query(schemas.Post).filter(schemas.Post.id == post.id).delete()
         db.commit()
         return
@@ -102,58 +114,61 @@ async def handle_post(db: Session, post: Post, event: str | None = None):
 
     files = extract_files_from_html(post.cooked)
     for image in files["images"]:
-        file_name = os.path.basename(image)
-        image_path = download_file(image, file_name)
-        image_content = parse_image(image_path)
-        stored_content = f"""用户上传的图片 {file_name} 使用 OCR 提取出来的文本内容如下 (用 === 包裹):
-===
-{image_content}
-==="""
-        new_file = schemas.UploadedFile(
-            post_id=new_post.id,
-            name=file_name,
-            path=image_path,
-            file_type="image",
-            created_at=post.created_at,
-            content=stored_content,
-            processed=True,
-        )
         try:
+            file_name = os.path.basename(image)
+            image_path = download_file(image, file_name)
+            image_content = parse_image(image_path)
+            stored_content = image_parse_msg.format(
+                file_name=file_name, image_content=image_content
+            )
+            new_file = schemas.UploadedFile(
+                post_id=new_post.id,
+                name=file_name,
+                path=image_path,
+                file_type="image",
+                created_at=post.created_at,
+                content=stored_content,
+                processed=True,
+            )
             db.add(new_file)
-        except:
+        except Exception as e:
+            logger.error(e)
             logger.error("Failed to add image to database")
 
     for file in files["files"]:
-        file_name = os.path.basename(file)
-        downloaded_path = download_file(file, file_name)
-        new_file = schemas.UploadedFile(
-            post_id=new_post.id,
-            name=file_name,
-            path=downloaded_path,
-            created_at=post.created_at,
-        )
-        file_ext = os.path.splitext(file)[1]
-        if file_ext in [
-            ".tar",
-            ".gz",
-            ".bz2",
-            ".xz",
-            ".zip",
-        ]:
-            extracted_dir = extract_bundle(downloaded_path)
-            print("output_dir", extracted_dir)
-            new_file.file_type = "archive"
-            new_file.processed = True
-            # TODO: Implement obdiag log analyze
-            # subprocess.run(["obdiag", "log", "analyze", extracted_dir])
-            pipe = subprocess.run(["ls", "-l", extracted_dir], capture_output=True, text=True)
-            new_file.content = f"""用户上传的文件 {file_name} 解压后的目录结构和使用 obdiag 进行离线日志分析后得到的结果如下 (用 === 包裹):
-===
-{pipe.stdout}
-==="""
         try:
+            file_name = os.path.basename(file)
+            downloaded_path = download_file(file, file_name)
+            new_file = schemas.UploadedFile(
+                post_id=new_post.id,
+                name=file_name,
+                path=downloaded_path,
+                created_at=post.created_at,
+            )
+            file_ext = os.path.splitext(file)[1]
+            if file_ext in [
+                ".tar",
+                ".gz",
+                ".bz2",
+                ".xz",
+                ".zip",
+            ]:
+                extracted_dir = extract_bundle(downloaded_path)
+                print("output_dir", extracted_dir)
+                new_file.file_type = "archive"
+                new_file.processed = True
+                pipe = subprocess.run(
+                    ["obdiag", "analyze", "log", "--files", extracted_dir],
+                    capture_output=True,
+                    text=True,
+                )
+                # pipe = subprocess.run(["ls", "-l", extracted_dir], capture_output=True, text=True)
+                new_file.content = log_analyze_msg.format(
+                    file_name=file_name, content=pipe.stdout
+                )
             db.add(new_file)
-        except:
+        except Exception as e:
+            logger.error(e)
             logger.error("Failed to add archive to database")
 
     try:
@@ -165,11 +180,27 @@ async def handle_post(db: Session, post: Post, event: str | None = None):
     return new_post
 
 
-async def handle_solved(db: Session, solved: Solved):
+async def handle_solved(db: Session, solved: Solved, event: str | None = None):
     print("solved", solved)
+    try:
+        task: schemas.Task | None = (
+            db.query(schemas.Task)
+            .where(
+                schemas.Task.topic_id == solved.topic_id,
+                schemas.Task.task_type == schemas.Task.Type.Topic.value,
+                schemas.Task.task_status != schemas.Task.Status.Done.value,
+            )
+            .first()
+        )
+        if task:
+            task.done()
+            db.commit()
+    except Exception as e:
+        logger.error(e)
+        logger.error("Failed to mark task as done")
     return solved
 
 
-async def handle_like(db: Session, like: Like):
+async def handle_like(db: Session, like: Like, event: str | None = None):
     print("like", like)
     return like

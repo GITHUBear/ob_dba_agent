@@ -64,6 +64,12 @@ class Task(Base):
         Done = "done"
         Failed = "failed"
         Canceled = "canceled"
+        
+    class Type(stdEnum):
+        Post = "post"
+        Topic = "topic"
+        Solved = "solved"
+        Like = "like"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     task_type = Column(String)

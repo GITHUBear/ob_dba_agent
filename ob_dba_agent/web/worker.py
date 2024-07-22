@@ -163,10 +163,10 @@ def task_worker(no: int, **kwargs):
                 task.done()
                 db.commit()
             elif topic.llm_classified_to == Topic.Clf.Features.value:
-                # RAG here
-                answer = doc_rag(query_content, chat_history, rewritten=rewritten)
-                print(answer)
                 try:
+                    # RAG here
+                    answer = doc_rag(query_content, chat_history, rewritten=rewritten)
+                    print(answer)
                     reply_post(topic_id=topic.id, raw=answer)
                     if len(chat_history) > 2:
                         # At most reply two posts
@@ -212,7 +212,10 @@ def task_worker(no: int, **kwargs):
                             task.done()
                         else:
                             questions = output_object.get_data("questions")
-                            answer = '\n'.join(questions)
+                            for i, q in enumerate(questions):
+                                questions[i] = f"{i + 1}. {q}"
+                            
+                            answer = "再向您确认几个问题:\n" + '\n'.join(questions)
                             reply_post(topic_id=topic.id, raw=answer)
                             print(answer)
                             task.delay()
