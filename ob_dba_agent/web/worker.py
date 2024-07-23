@@ -57,11 +57,12 @@ class ChatHistory:
 
 
     def get_turns(self) -> int:
-        count = 0
+        turns = 0
         for talk in self.chat_history:
             if talk["角色"] == self.Role.Bot:
-                count += 1
+                turns += 1
 
+        return turns
 
     def add_chat(self, role: str, content: str):
         self.chat_history.append({
@@ -172,7 +173,7 @@ def task_worker(no: int, **kwargs):
                 chat_turns = history.get_turns()
                 chat_history = history.chat_history
                 
-                print("previous conversations", history)
+                print("previous conversations", chat_history)
 
                 rewritten = query_content
                 # Pass to guard agent
