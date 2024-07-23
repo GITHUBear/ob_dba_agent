@@ -38,13 +38,13 @@ reference = "china"
 
 [[package]]
 name = "agentuniverse"
-version = "0.0.9"
+version = "0.0.11"
 description = "agentUniverse is a framework for developing applications powered by multi-agent base on large language model."
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "agentuniverse-0.0.9-py3-none-any.whl", hash = "sha256:f997042fedaedb9f694d0461b3e22ac8cf015501f04ea659afffffc41913981b"},
-    {file = "agentuniverse-0.0.9.tar.gz", hash = "sha256:59f59308295b9645e42b1b3ca0c5852cf818ff1a60b4b29da916273d939ea38f"},
+    {file = "agentuniverse-0.0.11-py3-none-any.whl", hash = "sha256:529359fa4423b3ceca96e2b170311628020ceb11c90674d8aec777d9829c2fef"},
+    {file = "agentuniverse-0.0.11.tar.gz", hash = "sha256:4871528795f0452c7773cdc9ec52f99f048538a7199c233c840ede502f447c1d"},
 ]
 
 [package.dependencies]
@@ -52,6 +52,7 @@ anthropic = ">=0.26.0,<0.27.0"
 cffi = ">=1.15.1,<2.0.0"
 chromadb = "0.4.24"
 dashscope = ">=1.19.1,<2.0.0"
+duckduckgo-search = ">=6.1.7,<7.0.0"
 flask = ">=2.3.2,<3.0.0"
 flask_cors = "4.0.0"
 googleapis-common-protos = ">=1.63.0,<2.0.0"
@@ -64,9 +65,12 @@ langchain-community = "0.0.38"
 langchain-core = "0.1.52"
 loguru = "0.7.2"
 myst-parser = ">=2.0.0,<3.0.0"
+numpy = ">=1.26.0,<2.0.0"
 ollama = ">=0.2.1,<0.3.0"
 openai = "1.13.3"
 opentelemetry-exporter-otlp-proto-grpc = ">=1.25.0,<2.0.0"
+pandas = ">=2.2.2,<3.0.0"
+pyarrow = ">=16.1.0,<17.0.0"
 pydantic = ">=2.6.4,<3.0.0"
 qianfan = ">=0.3.12,<0.4.0"
 requests = ">=2.32.0,<3.0.0"
@@ -76,6 +80,7 @@ SQLAlchemy = "2.0.25"
 tiktoken = "0.5.2"
 tqdm = ">=4.66.3,<5.0.0"
 werkzeug = ">=3.0.3,<4.0.0"
+wikipedia = ">=1.4.0,<2.0.0"
 
 [package.extras]
 log-ext = ["aliyun-log-python-sdk (==0.8.8)"]
@@ -1104,6 +1109,30 @@ files = [
     {file = "docutils-0.20.1-py3-none-any.whl", hash = "sha256:96f387a2c5562db4476f09f13bbab2192e764cac08ebbf3a34a95d9b1e4a59d6"},
     {file = "docutils-0.20.1.tar.gz", hash = "sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b"},
 ]
+
+[package.source]
+type = "legacy"
+url = "https://pypi.antfin-inc.com/simple"
+reference = "china"
+
+[[package]]
+name = "duckduckgo-search"
+version = "6.2.1"
+description = "Search for words, documents, images, news, maps and text translation using the DuckDuckGo.com search engine."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "duckduckgo_search-6.2.1-py3-none-any.whl", hash = "sha256:1a03f799b85fdfa08d5e6478624683f373b9dc35e6f145544b9cab72a4f575fa"},
+    {file = "duckduckgo_search-6.2.1.tar.gz", hash = "sha256:d664ec096193e3fb43bdfae4b0ad9c04e44094b58f41998adcdd20a86ee1ed74"},
+]
+
+[package.dependencies]
+click = ">=8.1.7"
+pyreqwest-impersonate = ">=0.5.0"
+
+[package.extras]
+dev = ["mypy (>=1.10.1)", "pytest (>=8.2.2)", "pytest-asyncio (>=0.23.7)", "ruff (>=0.5.2)"]
+lxml = ["lxml (>=5.2.2)"]
 
 [package.source]
 type = "legacy"
@@ -4269,6 +4298,31 @@ url = "https://pypi.antfin-inc.com/simple"
 reference = "china"
 
 [[package]]
+name = "pyreqwest-impersonate"
+version = "0.5.1"
+description = "HTTP client that can impersonate web browsers, mimicking their headers and `TLS/JA3/JA4/HTTP2` fingerprints"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:faab6381bceb7506086cc19231903d5d09919f66f9e87d8ab22e1d9abb0ffb59"},
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8c91b988dbc84adc790e4336068167bb0a3091337a813c9f4160dbb6b3655c81"},
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:65823d47a695e61bd4d007673e88515eba7483bdcfc09ad0e88cb70cb3808ba3"},
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e24fcc08696df1bd01939b1e091eeac2192ab2d088064e3517b77d3bbea94098"},
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:0cf981a885473b9edd2a74deea89f8af08cd96a5ce4d25d8ff00cde7377e6276"},
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:1e0b7e7a32a908085881af6647096e233f99ffa5389a62e66ee1e2f8e0aa861e"},
+    {file = "pyreqwest_impersonate-0.5.1-cp38-abi3-win_amd64.whl", hash = "sha256:1983be82abff81164df497111679f7de83814b0d149d54b8e863a175c7b36684"},
+    {file = "pyreqwest_impersonate-0.5.1.tar.gz", hash = "sha256:f36058698b1476e2d778082d89f99e5020d2e58e2e8915a2718a42a6325dffc2"},
+]
+
+[package.extras]
+dev = ["pytest (>=8.1.1)"]
+
+[package.source]
+type = "legacy"
+url = "https://pypi.antfin-inc.com/simple"
+reference = "china"
+
+[[package]]
 name = "pytesseract"
 version = "0.3.10"
 description = "Python-tesseract is a python wrapper for Google's Tesseract-OCR"
@@ -6272,6 +6326,25 @@ url = "https://pypi.antfin-inc.com/simple"
 reference = "china"
 
 [[package]]
+name = "wikipedia"
+version = "1.4.0"
+description = "Wikipedia API for Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "wikipedia-1.4.0.tar.gz", hash = "sha256:db0fad1829fdd441b1852306e9856398204dc0786d2996dd2e0c8bb8e26133b2"},
+]
+
+[package.dependencies]
+beautifulsoup4 = "*"
+requests = ">=2.0.0,<3.0.0"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.antfin-inc.com/simple"
+reference = "china"
+
+[[package]]
 name = "win32-setctime"
 version = "1.1.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -6627,4 +6700,4 @@ reference = "china"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "55680f0ffc26cad66663e566c8c9b453b94fe9b74d4d2333514c1185a6f31d75"
+content-hash = "d68b4844e3b273ec8e17f58d1d764bf75cd22ade2f801a4a1f532822dce49144"

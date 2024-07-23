@@ -30,7 +30,7 @@ def extract_files_from_html(
     """
     extract_file_path_from_html extracts file path from HTML content
     """
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, features="html.parser")
     files: list[str] = [a["href"] for a in soup.find_all("a", href=True)]
     images: list[str] = [img["src"] for img in soup.find_all("img", src=True)]
 

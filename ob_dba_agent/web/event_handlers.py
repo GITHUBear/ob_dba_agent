@@ -46,7 +46,7 @@ def create_task(
         new_task.user_id = kwargs["user_id"]
     if "event" in kwargs:
         new_task.event = kwargs["event"]
-        if new_task.event.endswith("destroyed"):
+        if isinstance(new_task.event, str) and new_task.event.endswith("destroyed"):
             new_task.done()
 
     try:

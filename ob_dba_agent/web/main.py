@@ -1,6 +1,11 @@
-from agentuniverse.base.agentuniverse import AgentUniverse
+import os
+import random
+import datetime
+import threading
+from typing import Union
+from typing_extensions import Annotated
 
-AgentUniverse().start()
+from agentuniverse.base.agentuniverse import AgentUniverse
 from agentuniverse.agent_serve.service_manager import ServiceManager
 
 from contextlib import asynccontextmanager
@@ -11,12 +16,6 @@ from ob_dba_agent.web.schemas import Base
 from ob_dba_agent.web.database import engine, get_db
 from ob_dba_agent.web.event_handlers import *
 from ob_dba_agent.web.worker import task_worker
-from typing_extensions import Annotated
-from typing import Union
-import datetime
-import os
-import random
-import threading
 
 
 Base.metadata.create_all(bind=engine)
@@ -24,6 +23,7 @@ Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    AgentUniverse().start()
     # Before the app starts
     for i in range(int(os.environ.get("WORKER_COUNT", 1))):
         threading.Thread(target=task_worker, args=(i,), daemon=True).start()
