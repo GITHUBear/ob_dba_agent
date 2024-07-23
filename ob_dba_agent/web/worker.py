@@ -15,13 +15,21 @@ from agentuniverse.agent.action.knowledge.knowledge import Knowledge
 from ob_dba_agent.web.utils import reply_post
 
 
-def doc_rag(query: str, chat_history: list[dict], **kwargs) -> str:
+def doc_rag(query: str, chat_history: list[dict] = [], **kwargs) -> str:
     print("rag agent", query, chat_history)
     rewritten = kwargs.get("rewritten", query)
     knowledge: Knowledge = KnowledgeManager().get_instance_obj(
         "ob_doc_knowledge"
     )
     chunks: list[Document] = knowledge.query_knowledge(query_str=rewritten)
+    length = 0
+    for chunk in chunks:
+        length += len(chunk.text)
+
+    while length > 5000 and len(chunks) > 0:
+        last_chunk = chunks.pop()
+        length -= len(last_chunk.text)
+        
     documents = "\n".join([chunk.text for chunk in chunks])
 
     rag_agent: Agent = AgentManager().get_instance_obj("ob_rag_agent")
@@ -35,8 +43,9 @@ def doc_rag(query: str, chat_history: list[dict], **kwargs) -> str:
     visited = {}
     doc_list = []
     replace_from = "./oceanbase-doc"
-    replace_to = "https://github.com/oceanbase/oceanbase-doc/blob/V4.1.0"
+    replace_to = "https://github.com/oceanbase/oceanbase-doc/blob/V4.3.1"
     for c in chunks:
+        print(c.metadata)
         if c.metadata["doc_name"] in visited:
             continue
         visited[c.metadata["doc_name"]] = True
@@ -90,10 +99,9 @@ class ChatHistory:
 def task_worker(no: int, **kwargs):
     print(f"Task worker {no} started")
     debug = kwargs.get("debug", False)
-    bot_name = kwargs.get("bot_name", "序风")
+    bot_name = kwargs.get("bot_name", "汤圆")
     while True:
         try:
-            time.sleep(random.randrange(10, 20))
             with SessionLocal() as db:
                 preds = [Task.task_status.in_([Task.Status.Pending.value, Task.Status.Processing.value]), Task.task_type == "topic"]
                 if not debug:
@@ -106,7 +114,7 @@ def task_worker(no: int, **kwargs):
                 
                 if task is None:
                     print(f"Task worker {no} waiting for task to be triggered")
-                    time.sleep(random.randrange(10, 20))
+                    time.sleep(random.randrange(5, 20))
                     continue
 
                 topic: Topic | None = (
@@ -121,6 +129,7 @@ def task_worker(no: int, **kwargs):
                         task.failed()
                         
                     db.commit()
+                    time.sleep(random.randrange(5, 20))
                     continue
 
                 # Do some work here
@@ -141,10 +150,10 @@ def task_worker(no: int, **kwargs):
                     db.commit()
                     continue
 
-                if posts[-1].username == bot_name:
+                if posts[-1].username != topic.creator_username:
                     # User has not replied
                     print(f"User has not replied topic {topic.id} yet, rescheduling task")
-                    task.delay(minutes=10)
+                    task.delay(minutes=random.randrange(5, 20))
                     db.commit()
                     continue
 
@@ -157,7 +166,7 @@ def task_worker(no: int, **kwargs):
                     post_extra_content[p.id] = ""
                 for f in files:
                     if f.processed:
-                        post_extra_content[f.post_id] = f.content
+                        post_extra_content[f.post_id] += ('\n' + f.content)
 
                 history = ChatHistory()
                 
@@ -269,4 +278,6 @@ def task_worker(no: int, **kwargs):
 
 if __name__ == "__main__":
     AgentUniverse().start()
-    task_worker(0, debug=True, bot_name="机器人")
+    # task_worker(0, debug=True, bot_name="机器人")
+    print(doc_rag("请问创建租户时 ob_compatiblity_control 这个参数是哪个社区版本开始用的"))
+

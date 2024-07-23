@@ -4,7 +4,7 @@ class SearchEngineConfig:
     normalize_embeddings = True
     use_fp16 = True
 
-    milvus_db_file = "../../../DB/milvus_rag.db"
+    milvus_db_file = "../../DB/milvus_rag_431.db"
     milvus_corpus_collection_name="corpus"
     milvus_dense_corpus_topk = 10
     milvus_sparse_corpus_topk = 10

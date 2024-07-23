@@ -22,9 +22,9 @@ def get_model(model_args: SearchEngineConfig):
 
 
 class MilvusSearchEngine:
-    def __init__(self, logger: logging.Logger, db_path = "../../../DB/milvus_rag.db"):
+    def __init__(self, logger: logging.Logger):
         config = SearchEngineConfig()
-        self.db_file = db_path
+        self.db_file = config.milvus_db_file
         self.collection_corpus = config.milvus_corpus_collection_name
         self.bge_lock = threading.Lock()
         self.bge_m3_model = get_model(config)
