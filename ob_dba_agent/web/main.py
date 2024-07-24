@@ -77,7 +77,7 @@ async def repost_entry(
         tasks.add_task(handle_like, db, req.like, event=x_discourse_event)
     elif req.ping:
         return "ok"
-    task = create_task(db, **kwargs)
+    task = handle_task(db, **kwargs)
     return task.id
 
 

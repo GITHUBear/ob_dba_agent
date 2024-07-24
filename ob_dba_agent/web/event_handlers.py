@@ -28,7 +28,7 @@ image_parse_msg = """用户上传的图片 {file_name} 使用 OCR 提取出来�
 ==="""
 
 
-def create_task(
+def handle_task(
     db: Session,
     task_type: str,
     **kwargs,
@@ -46,14 +46,15 @@ def create_task(
         new_task.user_id = kwargs["user_id"]
     if "event" in kwargs:
         new_task.event = kwargs["event"]
+        # topic_destroyed or post_destroyed
         if isinstance(new_task.event, str) and new_task.event.endswith("destroyed"):
             new_task.done()
             filters = [
                 schemas.Task.task_type == task_type,
-                schemas.Task.task_status.in_(
+                schemas.Task.task_status.in_([
                     schemas.Task.Status.Pending.value,
                     schemas.Task.Status.Processing.value,
-                ),
+                ]),
             ]
             if new_task.topic_id:
                 filters.append(schemas.Task.topic_id == new_task.topic_id)
