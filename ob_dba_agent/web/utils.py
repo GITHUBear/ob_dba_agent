@@ -126,6 +126,8 @@ def reply_post(topic_id: int, raw: str) -> int:
     )
     url = f"{FORUM_URL}/posts.json"
     response = requests.request("POST", url, headers=headers, data=payload)
+    if response.status_code >= 300:
+        raise Exception(f"Failed to reply post [{response.status_code}]: {response.text}")
     return response.status_code
 
 
