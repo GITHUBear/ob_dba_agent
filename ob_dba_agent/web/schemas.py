@@ -105,3 +105,18 @@ class Like(Base):
     username = Column(String)
     user_id = Column(Integer)
     created_at = Column(DateTime)
+    
+
+class DingtalkMsg(Base):
+    __tablename__ = "dingtalk_messages"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    conversation_id = Column(String)
+    msg_id = Column(String)
+    sender_nick = Column(String)
+    text = Column(String)
+    conversation_title = Column(String)
+    created_at = Column(DateTime)
+    answer = Column(String, nullable=True)
+    status = Column(Enum("pending", "done", "failed"), default="pending")
+    cost_seconds = Column(Integer, nullable=True)

@@ -34,6 +34,7 @@ def chat_with_bot(query: str, chat_history: list[dict] = [], documents: str = ''
         history=chat_history,
     )
     answer: str = output_object.get_data("output")
+    logger.debug(f"chat_with_bot: {answer}")
     return answer
 
 
@@ -63,7 +64,7 @@ def doc_search(query: str, chat_history: list[dict] = []) -> DocSearchResult:
         visited[c.metadata["doc_name"]] = True
         doc_list.append(f"- [{c.metadata["doc_name"]}]({c.metadata["doc_url"].replace(replace_from, replace_to)})")
         
-    res.references = "\n具体信息可参考以下文档:\n" + "\n".join(doc_list)
+    res.references = "\n\n具体信息可参考以下文档:\n" + "\n".join(doc_list)
     
     return res
 

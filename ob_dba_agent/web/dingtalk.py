@@ -5,26 +5,25 @@ import requests
 import os
 import threading
 import traceback
+import datetime
 from typing import Union, List
 from typing_extensions import Annotated
 from agentuniverse.agent.agent_manager import AgentManager
 from ob_dba_agent.web.doc_rag import doc_rag, classify_intention, chat_with_bot
 from ob_dba_agent.web.logger import logger
+from ob_dba_agent.web.database import SessionLocal
+from ob_dba_agent.web.schemas import DingtalkMsg
 
 
 dingtalk_app = FastAPI()
 
 
 def handle_dingtalk_msg(query: str) -> str:
-    try:
-        ic = classify_intention(query)
-        if ic.intention == "闲聊":
-            return chat_with_bot(query)
-        else:
-            return doc_rag(ic.rewritten)
-    except Exception as e:
-        logger.error(traceback.format_exc())
-
+    ic = classify_intention(query)
+    if ic.intention == "闲聊":
+        return chat_with_bot(query)
+    else:
+        return doc_rag(ic.rewritten)
 
 class TextMsg(BaseModel):
     content: str
@@ -78,7 +77,6 @@ def send_msg(
             },
             params={"session": session},
         )
-
     return requests.post(
         url,
         json={
@@ -96,8 +94,8 @@ def send_msg(
 async def query(
     request: QueryRequest, token: Annotated[Union[str, None], Header()] = None
 ):
-    if token is None or token != DINGTALK_TOKEN:
-        return JSONResponse(content={"msg": "Unauthorized"}, status_code=401)
+    # if token is None or token != DINGTALK_TOKEN:
+    #     return JSONResponse(content={"msg": "Unauthorized"}, status_code=401)
     logger.info(request)
 
     if request.msgtype == "text" and request.text is None:
@@ -127,17 +125,38 @@ async def query(
     webhook_url, session = webhook_splits[0], webhook_splits[1].split("=")[1]
 
     def query_and_reply():
-        try:
-            answer = handle_dingtalk_msg(query_content)
-            send_msg(
-                webhook_url,
-                session,
-                f"@{request.senderNick}，你的提问是: {query_content}\n\n回答如下:\n\n{answer}",
-                title="xvx! 回答已生成!",
-            )
-        except Exception:
-            traceback.print_exc()
-            send_msg(webhook_url, session, f"x_x 查询失败")
+        with SessionLocal() as db:
+            try:
+                msg = DingtalkMsg(
+                    conversation_id=request.conversationId,
+                    text=query_content,
+                    sender_nick=request.senderNick,
+                    msg_id=request.msgId,
+                    conversation_title=request.conversationTitle,
+                    created_at=datetime.datetime.now(),
+                )
+                start = datetime.datetime.now()
+                
+                answer = handle_dingtalk_msg(query_content)
+                logger.debug(f"[DingTalk] Answer for {query_content} is:\n{answer}")
+                msg.answer = answer
+                send_msg(
+                    webhook_url,
+                    session,
+                    f"@{request.senderNick}，你的提问是: {query_content}\n\n回答如下:\n\n{answer}",
+                    title="xvx! 回答已生成!",
+                )
+                msg.status = 'done'
+            except Exception:
+                logger.error(traceback.format_exc())
+                send_msg(webhook_url, session, f"x_x 查询失败")
+                msg.status = 'failed'
+            finally:
+                end = datetime.datetime.now()
+                delta = end - start
+                msg.cost_seconds = delta.seconds
+                db.add(msg)
+                db.commit()
 
     threading.Thread(target=query_and_reply, args=()).start()
 
