@@ -12,7 +12,7 @@ from agentuniverse.agent.output_object import OutputObject
 from agentuniverse.agent.action.knowledge.store.document import Document
 from agentuniverse.agent.agent import Agent
 from ob_dba_agent.web.utils import reply_post
-from ob_dba_agent.web.doc_rag import doc_rag
+from ob_dba_agent.web.doc_rag import doc_rag, classify_intention
 
 
 class ChatHistory:
@@ -150,20 +150,16 @@ def task_worker(no: int, **kwargs):
                 # Pass to guard agent
                 if topic.llm_classified_to is None:
                     logger.debug(f"Guard Agent: {query_content}")
-                    guard_agent: Agent = AgentManager().get_instance_obj("ob_dba_guard_agent")
-                    output_object: OutputObject = guard_agent.run(
-                        input=query_content, history=chat_history,
-                    )
-                    question_type = output_object.get_data("type")
-                    rewritten = output_object.get_data("rewrite")
+                    ic = classify_intention(query_content, chat_history=chat_history)
+                    rewritten = ic.rewritten
                     
-                    logger.debug(f"Question type: {question_type}, rewritten: {rewritten}")
+                    logger.debug(f"Question type: {ic.intention}, rewritten: {rewritten}")
 
-                    if question_type == "闲聊":
+                    if ic.intention == "闲聊":
                         topic.llm_classified_to = Topic.Clf.Casual.value
-                    elif question_type == "特性问题":
+                    elif ic.intention == "特性问题":
                         topic.llm_classified_to = Topic.Clf.Features.value
-                    elif question_type == "诊断问题":
+                    elif ic.intention == "诊断问题":
                         topic.llm_classified_to = Topic.Clf.Diagnostic.value
 
                     db.commit()

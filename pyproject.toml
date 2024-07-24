@@ -19,12 +19,12 @@ bs4 = "^0.0.2"
 [[tool.poetry.source]]
 name = "china"
 url = "https://pypi.antfin-inc.com/simple/"
-priority = "primary"
+priority = "supplemental"
 
 [[tool.poetry.source]]
 name = "pipy"
 url = "https://pypi.org/simple/"
-priority = "supplemental"
+priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]

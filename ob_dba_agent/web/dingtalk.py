@@ -8,11 +8,22 @@ import traceback
 from typing import Union, List
 from typing_extensions import Annotated
 from agentuniverse.agent.agent_manager import AgentManager
-from ob_dba_agent.web.doc_rag import doc_rag
+from ob_dba_agent.web.doc_rag import doc_rag, classify_intention, chat_with_bot
 from ob_dba_agent.web.logger import logger
 
 
 dingtalk_app = FastAPI()
+
+
+def handle_dingtalk_msg(query: str) -> str:
+    try:
+        ic = classify_intention(query)
+        if ic.intention == "闲聊":
+            return chat_with_bot(query)
+        else:
+            return doc_rag(ic.rewritten)
+    except Exception as e:
+        logger.error(traceback.format_exc())
 
 
 class TextMsg(BaseModel):
@@ -117,7 +128,7 @@ async def query(
 
     def query_and_reply():
         try:
-            answer = doc_rag(query_content)
+            answer = handle_dingtalk_msg(query_content)
             send_msg(
                 webhook_url,
                 session,
@@ -134,3 +145,9 @@ async def query(
         "text": {"content": f"x!x @{request.senderNick} 正在查询答案..."},
         "msgtype": "text",
     }
+
+if __name__ == '__main__':
+    from agentuniverse.base.agentuniverse import AgentUniverse
+    AgentUniverse().start()
+    print(handle_dingtalk_msg("今天天气怎么样"))
+    print(handle_dingtalk_msg("OceanBase 的分布式架构是如何的?"))
