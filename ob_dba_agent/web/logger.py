@@ -5,7 +5,7 @@ log_level = os.environ.get("LOG_LEVEL", "INFO")
 levelMapping = logging.getLevelNamesMapping()
 
 handler = logging.StreamHandler()
-formatter = logging.Formatter("%(asctime)s - {%(filename)s:%(lineno)d} - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(pathname)s:%(lineno)d - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 
 logger = logging.getLogger("dba-agent")

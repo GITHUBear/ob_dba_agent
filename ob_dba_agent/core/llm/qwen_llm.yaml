@@ -2,7 +2,7 @@ name: 'qwen_llm'
 description: 'qwen llm with spi'
 model_name: 'qwen-max'
 max_tokens: 2000
-temperature: 0.3
+temperature: 0.5
 metadata:
   type: 'LLM'
   module: 'agentuniverse.llm.default.qwen_openai_style_llm'
