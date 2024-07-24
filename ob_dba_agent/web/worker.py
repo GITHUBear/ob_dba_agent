@@ -10,49 +10,9 @@ from agentuniverse.agent.agent_manager import AgentManager
 from agentuniverse.agent.output_object import OutputObject
 from agentuniverse.agent.action.knowledge.store.document import Document
 from agentuniverse.agent.agent import Agent
-from agentuniverse.agent.action.knowledge.knowledge_manager import KnowledgeManager
-from agentuniverse.agent.action.knowledge.knowledge import Knowledge
 from ob_dba_agent.web.utils import reply_post
+from ob_dba_agent.web.doc_rag import doc_rag
 
-
-def doc_rag(query: str, chat_history: list[dict] = [], **kwargs) -> str:
-    print("rag agent", query, chat_history)
-    rewritten = kwargs.get("rewritten", query)
-    knowledge: Knowledge = KnowledgeManager().get_instance_obj(
-        "ob_doc_knowledge"
-    )
-    chunks: list[Document] = knowledge.query_knowledge(query_str=rewritten)
-    length = 0
-    for chunk in chunks:
-        length += len(chunk.text)
-
-    while length > 5000 and len(chunks) > 0:
-        last_chunk = chunks.pop()
-        length -= len(last_chunk.text)
-        
-    documents = "\n".join([chunk.text for chunk in chunks])
-
-    rag_agent: Agent = AgentManager().get_instance_obj("ob_rag_agent")
-    output_object: OutputObject = rag_agent.run(
-        input=query, 
-        document_snippets=documents,
-        history=chat_history,
-    )
-    answer: str = output_object.get_data("output")
-    # print("expressing_result:", expressing_result)
-    visited = {}
-    doc_list = []
-    replace_from = "./oceanbase-doc"
-    replace_to = "https://github.com/oceanbase/oceanbase-doc/blob/V4.3.1"
-    for c in chunks:
-        print(c.metadata)
-        if c.metadata["doc_name"] in visited:
-            continue
-        visited[c.metadata["doc_name"]] = True
-        doc_list.append(f"- [{c.metadata["doc_name"]}]({c.metadata["doc_url"].replace(replace_from, replace_to)})")
-        
-    references = "\n具体信息可参考以下文档:\n" + "\n".join(doc_list)
-    return answer + references
 
 class ChatHistory:
     
@@ -113,8 +73,9 @@ def task_worker(no: int, **kwargs):
                 )
                 
                 if task is None:
-                    print(f"Task worker {no} waiting for task to be triggered")
-                    time.sleep(random.randrange(5, 20))
+                    sleep_secs = random.randrange(5, 20)
+                    print(f"Task worker {no} waiting for task to be triggered. Sleep for {sleep_secs} secs")
+                    time.sleep(sleep_secs)
                     continue
 
                 topic: Topic | None = (
@@ -238,6 +199,7 @@ def task_worker(no: int, **kwargs):
                             obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
                             output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
                             answer = output_object.get_data("output")
+                            answer += ('\n\n'+'附上敏捷诊断工具 [obdiag 使用帮助链接](https://ask.oceanbase.com/t/topic/35605619)')
                             reply_post(topic_id=topic.id, raw=answer)
                             task.processing()
                             task.delay()
@@ -280,4 +242,3 @@ if __name__ == "__main__":
     AgentUniverse().start()
     # task_worker(0, debug=True, bot_name="机器人")
     print(doc_rag("请问创建租户时 ob_compatiblity_control 这个参数是哪个社区版本开始用的"))
-

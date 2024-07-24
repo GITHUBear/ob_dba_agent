@@ -16,6 +16,7 @@ from ob_dba_agent.web.schemas import Base
 from ob_dba_agent.web.database import engine, get_db
 from ob_dba_agent.web.event_handlers import *
 from ob_dba_agent.web.worker import task_worker
+from ob_dba_agent.web.dingtalk import dingtalk_app
 
 
 Base.metadata.create_all(bind=engine)
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 # app = FastAPI()
 
+app.mount("/dingtalk", dingtalk_app)
 
 @app.post("/repost/entry")
 async def repost_entry(

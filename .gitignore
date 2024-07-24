@@ -8,3 +8,4 @@ resources/
 jsons/
 downloaded/
 uploaded/
+*.log
