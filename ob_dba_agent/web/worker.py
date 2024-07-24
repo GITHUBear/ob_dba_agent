@@ -184,7 +184,7 @@ def task_worker(no: int, **kwargs):
                             task.processing()
                             task.delay()
                     except Exception as e:
-                        traceback.logger.debug_exc()
+                        traceback.print_exc()
                         task.delay()
                     finally:
                         db.commit()
