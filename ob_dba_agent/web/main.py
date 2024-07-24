@@ -47,7 +47,7 @@ async def repost_entry(
     x_discourse_event: Annotated[Union[str, None], Header()] = None,
 ):
     # Dispatch the request to different services
-    logger.info("Received request %s", req, "event", x_discourse_event)
+    logger.info(f"Received event {x_discourse_event}, request {req}")
     kwargs = {
         "event": x_discourse_event,
     }

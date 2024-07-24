@@ -144,7 +144,7 @@ def task_worker(no: int, **kwargs):
                 chat_turns = history.get_turns()
                 chat_history = history.chat_history
                 
-                logger.debug("previous conversations", chat_history)
+                logger.debug(f"previous conversations: {chat_history}")
 
                 rewritten = query_content
                 # Pass to guard agent
@@ -196,7 +196,7 @@ def task_worker(no: int, **kwargs):
                             break
                     try:
                         if not log_uploaded and task.task_status == task.Status.Pending.value:
-                            logger.debug("obdiag classification agent: ", rewritten)
+                            logger.debug(f"obdiag classification agent: {rewritten}")
                             obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
                             output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
                             answer = output_object.get_data("output")
@@ -205,7 +205,7 @@ def task_worker(no: int, **kwargs):
                             task.processing()
                             task.delay()
                         else:
-                            logger.debug("questioning agent: ", query_content, chat_history)
+                            logger.debug("questioning agent: query content: {query_content}, chat history: {chat_history}")
                             questioning_agent: Agent = AgentManager().get_instance_obj("ob_dba_questioning_agent")
                             polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
                             output_object: OutputObject = questioning_agent.run(
@@ -213,7 +213,7 @@ def task_worker(no: int, **kwargs):
                                 chat_history=polished_history
                             )
                             complete = output_object.get_data("complete")
-                            logger.debug("问题", "可解决" if complete else "不可解决")
+                            logger.debug(f"问题{"可解决" if complete else "不可解决"}")
                             if complete or chat_turns >= 3:
                                 answer = doc_rag(query_content, chat_history, rewritten=rewritten)
                                 reply_post(topic_id=topic.id, raw=answer)

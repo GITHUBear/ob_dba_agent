@@ -9,7 +9,7 @@ from ob_dba_agent.web.logger import logger
 
 
 def doc_rag(query: str, chat_history: list[dict] = [], **kwargs) -> str:
-    logger.debug("rag agent", query, chat_history)
+    logger.debug("rag agent, query: %s, chat history: %s", query, chat_history)
     rewritten = kwargs.get("rewritten", query)
     knowledge: Knowledge = KnowledgeManager().get_instance_obj(
         "ob_doc_knowledge"
