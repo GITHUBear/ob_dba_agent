@@ -4,10 +4,12 @@ from agentuniverse.agent.output_object import OutputObject
 from agentuniverse.agent.action.knowledge.knowledge import Knowledge
 from agentuniverse.agent.action.knowledge.store.document import Document
 from agentuniverse.agent.action.knowledge.knowledge_manager import KnowledgeManager
+from ob_dba_agent.web.logger import logger
+
 
 
 def doc_rag(query: str, chat_history: list[dict] = [], **kwargs) -> str:
-    print("rag agent", query, chat_history)
+    logger.debug("rag agent", query, chat_history)
     rewritten = kwargs.get("rewritten", query)
     knowledge: Knowledge = KnowledgeManager().get_instance_obj(
         "ob_doc_knowledge"
@@ -30,13 +32,11 @@ def doc_rag(query: str, chat_history: list[dict] = [], **kwargs) -> str:
         history=chat_history,
     )
     answer: str = output_object.get_data("output")
-    # print("expressing_result:", expressing_result)
     visited = {}
     doc_list = []
     replace_from = "./oceanbase-doc"
     replace_to = "https://github.com/oceanbase/oceanbase-doc/blob/V4.3.1"
     for c in chunks:
-        print(c.metadata)
         if c.metadata["doc_name"] in visited:
             continue
         visited[c.metadata["doc_name"]] = True

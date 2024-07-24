@@ -2,6 +2,7 @@ import time
 import random
 import datetime
 import traceback
+from ob_dba_agent.web.logger import logger
 
 from ob_dba_agent.web.database import SessionLocal
 from ob_dba_agent.web.schemas import Task, Post, Topic, UploadedFile
@@ -57,7 +58,7 @@ class ChatHistory:
 
 
 def task_worker(no: int, **kwargs):
-    print(f"Task worker {no} started")
+    logger.info(f"Task worker {no} started")
     debug = kwargs.get("debug", False)
     bot_name = kwargs.get("bot_name", "汤圆")
     while True:
@@ -74,7 +75,7 @@ def task_worker(no: int, **kwargs):
                 
                 if task is None:
                     sleep_secs = random.randrange(5, 20)
-                    print(f"Task worker {no} waiting for task to be triggered. Sleep for {sleep_secs} secs")
+                    logger.info(f"Task worker {no} waiting for task to be triggered. Sleep for {sleep_secs} secs")
                     time.sleep(sleep_secs)
                     continue
 
@@ -82,7 +83,7 @@ def task_worker(no: int, **kwargs):
                     db.query(Topic).where(Topic.id == task.topic_id).first()
                 )
                 if topic is None:
-                    print(f"Task worker {no} failed to find topic {task.topic_id}")
+                    logger.info(f"Task worker {no} failed to find topic {task.topic_id}")
                     if task.task_status == task.Status.Pending.value:
                         task.processing()
                         task.delay(minutes=1)
@@ -106,14 +107,14 @@ def task_worker(no: int, **kwargs):
                 )
 
                 if len(posts) == 0:
-                    print(f"Topic {topic.id} has no posts, rescheduling task")
+                    logger.info(f"Topic {topic.id} has no posts, rescheduling task")
                     task.delay(minutes=5)
                     db.commit()
                     continue
 
                 if posts[-1].username != topic.creator_username:
                     # User has not replied
-                    print(f"User has not replied topic {topic.id} yet, rescheduling task")
+                    logger.info(f"User has not replied topic {topic.id} yet, rescheduling task")
                     task.delay(minutes=random.randrange(5, 20))
                     db.commit()
                     continue
@@ -143,12 +144,12 @@ def task_worker(no: int, **kwargs):
                 chat_turns = history.get_turns()
                 chat_history = history.chat_history
                 
-                print("previous conversations", chat_history)
+                logger.debug("previous conversations", chat_history)
 
                 rewritten = query_content
                 # Pass to guard agent
                 if topic.llm_classified_to is None:
-                    print(f"Guard Agent: {query_content}")
+                    logger.debug(f"Guard Agent: {query_content}")
                     guard_agent: Agent = AgentManager().get_instance_obj("ob_dba_guard_agent")
                     output_object: OutputObject = guard_agent.run(
                         input=query_content, history=chat_history,
@@ -156,7 +157,7 @@ def task_worker(no: int, **kwargs):
                     question_type = output_object.get_data("type")
                     rewritten = output_object.get_data("rewrite")
                     
-                    print(f"Question type: {question_type}, rewritten: {rewritten}")
+                    logger.debug(f"Question type: {question_type}, rewritten: {rewritten}")
 
                     if question_type == "闲聊":
                         topic.llm_classified_to = Topic.Clf.Casual.value
@@ -174,7 +175,7 @@ def task_worker(no: int, **kwargs):
                     try:
                         # RAG here
                         answer = doc_rag(query_content, chat_history, rewritten=rewritten)
-                        print(answer)
+                        logger.debug(answer)
                         reply_post(topic_id=topic.id, raw=answer)
                         if chat_turns >= 1:
                             # At most reply two posts
@@ -183,7 +184,7 @@ def task_worker(no: int, **kwargs):
                             task.processing()
                             task.delay()
                     except Exception as e:
-                        traceback.print_exc()
+                        traceback.logger.debug_exc()
                         task.delay()
                     finally:
                         db.commit()
@@ -195,7 +196,7 @@ def task_worker(no: int, **kwargs):
                             break
                     try:
                         if not log_uploaded and task.task_status == task.Status.Pending.value:
-                            print("obdiag classification agent: ", rewritten)
+                            logger.debug("obdiag classification agent: ", rewritten)
                             obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
                             output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
                             answer = output_object.get_data("output")
@@ -204,7 +205,7 @@ def task_worker(no: int, **kwargs):
                             task.processing()
                             task.delay()
                         else:
-                            print("questioning agent: ", query_content, chat_history)
+                            logger.debug("questioning agent: ", query_content, chat_history)
                             questioning_agent: Agent = AgentManager().get_instance_obj("ob_dba_questioning_agent")
                             polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
                             output_object: OutputObject = questioning_agent.run(
@@ -212,7 +213,7 @@ def task_worker(no: int, **kwargs):
                                 chat_history=polished_history
                             )
                             complete = output_object.get_data("complete")
-                            print("问题", "可解决" if complete else "不可解决")
+                            logger.debug("问题", "可解决" if complete else "不可解决")
                             if complete or chat_turns >= 3:
                                 answer = doc_rag(query_content, chat_history, rewritten=rewritten)
                                 reply_post(topic_id=topic.id, raw=answer)

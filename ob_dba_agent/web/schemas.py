@@ -91,6 +91,9 @@ class Task(Base):
         
     def processing(self):
         self.task_status = self.Status.Processing.value
+    
+    def canceled(self):
+        self.task_status = self.Status.Canceled.value
 
 
 class Like(Base):

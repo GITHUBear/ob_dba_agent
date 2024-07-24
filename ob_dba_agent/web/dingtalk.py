@@ -9,6 +9,7 @@ from typing import Union, List
 from typing_extensions import Annotated
 from agentuniverse.agent.agent_manager import AgentManager
 from ob_dba_agent.web.doc_rag import doc_rag
+from ob_dba_agent.web.logger import logger
 
 
 dingtalk_app = FastAPI()
@@ -86,7 +87,7 @@ async def query(
 ):
     if token is None or token != DINGTALK_TOKEN:
         return JSONResponse(content={"msg": "Unauthorized"}, status_code=401)
-    print(request)
+    logger.info(request)
 
     if request.msgtype == "text" and request.text is None:
         return JSONResponse(content={"msg": "Invalid request"}, status_code=400)

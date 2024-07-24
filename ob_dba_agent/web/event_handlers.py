@@ -2,7 +2,8 @@ from ob_dba_agent.web.models import Topic, Post, Solved, Like
 import ob_dba_agent.web.schemas as schemas
 from sqlalchemy.orm import Session
 import os
-import logging
+from ob_dba_agent.web.logger import logger
+
 import subprocess
 import datetime
 from ob_dba_agent.web.utils import FORUM_API_USERNAME
@@ -14,7 +15,6 @@ from ob_dba_agent.web.utils import (
     download_file,
 )
 
-logger = logging.getLogger(__name__)
 
 
 log_analyze_msg = """用户上传的文件 {file_name} 解压后的目录结构和使用 obdiag 进行离线日志分析后得到的结果如下 (用 === 包裹):
@@ -48,6 +48,20 @@ def create_task(
         new_task.event = kwargs["event"]
         if isinstance(new_task.event, str) and new_task.event.endswith("destroyed"):
             new_task.done()
+            filters = [
+                schemas.Task.task_type == task_type,
+                schemas.Task.task_status.in_(
+                    schemas.Task.Status.Pending.value,
+                    schemas.Task.Status.Processing.value,
+                ),
+            ]
+            if new_task.topic_id:
+                filters.append(schemas.Task.topic_id == new_task.topic_id)
+            if new_task.post_id:
+                filters.append(schemas.Task.post_id == new_task.post_id)
+            exist: schemas.Task | None = db.query(schemas.Task).filter(*filters).first()
+            if exist:
+                exist.canceled()
 
     try:
         db.add(new_task)
@@ -151,7 +165,7 @@ async def handle_post(db: Session, post: Post, event: str | None = None):
                 ".zip",
             ]:
                 extracted_dir = extract_bundle(downloaded_path)
-                print("output_dir", extracted_dir)
+                logger.debug(f"Extracted bundle to {extracted_dir}")
                 new_file.file_type = "archive"
                 new_file.processed = True
                 pipe = subprocess.run(

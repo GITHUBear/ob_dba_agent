@@ -5,6 +5,8 @@ import threading
 from typing import Union
 from typing_extensions import Annotated
 
+from ob_dba_agent.web.logger import logger
+
 from agentuniverse.base.agentuniverse import AgentUniverse
 from agentuniverse.agent_serve.service_manager import ServiceManager
 
@@ -20,7 +22,6 @@ from ob_dba_agent.web.dingtalk import dingtalk_app
 
 
 Base.metadata.create_all(bind=engine)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,7 +47,7 @@ async def repost_entry(
     x_discourse_event: Annotated[Union[str, None], Header()] = None,
 ):
     # Dispatch the request to different services
-    print("Received request", req)
+    logger.info("Received request %s", req, "event", x_discourse_event)
     kwargs = {
         "event": x_discourse_event,
     }
