@@ -74,9 +74,7 @@ def task_worker(no: int, **kwargs):
                 )
                 
                 if task is None:
-                    sleep_secs = random.randrange(5, 20)
-                    logger.debug(f"Task worker {no} waiting for task to be triggered. Sleep for {sleep_secs} secs")
-                    time.sleep(sleep_secs)
+                    time.sleep(random.randrange(5, 20))
                     continue
 
                 topic: Topic | None = (
