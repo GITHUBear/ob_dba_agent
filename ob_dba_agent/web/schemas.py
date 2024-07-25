@@ -44,6 +44,7 @@ class UploadedFile(Base):
     class FileType(stdEnum):
         Image = "image"
         Archive = "archive"
+        Docs = 'docs'
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     post_id = Column(Integer)

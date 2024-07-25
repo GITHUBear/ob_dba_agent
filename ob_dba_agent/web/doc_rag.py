@@ -38,7 +38,8 @@ def chat_with_bot(query: str, chat_history: list[dict] = [], documents: str = ''
     return answer
 
 
-def doc_search(query: str, chat_history: list[dict] = []) -> DocSearchResult:
+def doc_search(query: str, chat_history: list[dict] = [], **kwargs) -> DocSearchResult:
+    length_limit = kwargs.get("length_limit", 5000)
     knowledge: Knowledge = KnowledgeManager().get_instance_obj(
         "ob_doc_knowledge"
     )
@@ -47,7 +48,7 @@ def doc_search(query: str, chat_history: list[dict] = []) -> DocSearchResult:
     for chunk in chunks:
         length += len(chunk.text)
 
-    while length > 5000 and len(chunks) > 0:
+    while length > length_limit and len(chunks) > 0:
         last_chunk = chunks.pop()
         length -= len(last_chunk.text)
     

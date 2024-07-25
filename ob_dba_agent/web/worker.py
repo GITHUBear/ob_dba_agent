@@ -12,7 +12,7 @@ from agentuniverse.agent.output_object import OutputObject
 from agentuniverse.agent.action.knowledge.store.document import Document
 from agentuniverse.agent.agent import Agent
 from ob_dba_agent.web.utils import reply_post
-from ob_dba_agent.web.doc_rag import doc_rag, classify_intention
+from ob_dba_agent.web.doc_rag import doc_rag, classify_intention, doc_search
 
 
 class ChatHistory:
@@ -191,9 +191,23 @@ def task_worker(no: int, **kwargs):
                     try:
                         if not log_uploaded and task.task_status == task.Status.Pending.value:
                             logger.debug(f"obdiag classification agent: {rewritten}")
+                            docs = doc_search(rewritten)
+                            # Persist the search result
+                            content = f"\n根据用户的问题描述查询到的文档如下: (用 === 包裹的部分为搜索结果)\n===\n{docs.documents}\n===\n"
+                            saved_search = UploadedFile(
+                                post_id=posts[-1].id, 
+                                name="search_result", 
+                                path="search_result", 
+                                file_type=UploadedFile.FileType.Docs.value, 
+                                created_at=datetime.datetime.now(), 
+                                content=content,
+                                processed=True)
+                            db.add(saved_search)
+                            
                             obdiag_classify_agent: Agent = AgentManager().get_instance_obj("ob_diag_classification_agent")
-                            output_object: OutputObject = obdiag_classify_agent.run(input=rewritten)
+                            output_object: OutputObject = obdiag_classify_agent.run(input=rewritten, documents=docs.documents)
                             answer = output_object.get_data("output")
+                            answer += ('\n\n'+docs.references)
                             answer += ('\n\n'+'附上敏捷诊断工具 [obdiag 使用帮助链接](https://ask.oceanbase.com/t/topic/35605619)')
                             reply_post(topic_id=topic.id, raw=answer)
                             task.processing()
@@ -208,7 +222,7 @@ def task_worker(no: int, **kwargs):
                             )
                             complete = output_object.get_data("complete")
                             logger.debug(f"问题{"可解决" if complete else "不可解决"}")
-                            if complete or chat_turns >= 3:
+                            if complete or chat_turns >= 2:
                                 answer = doc_rag(query_content, chat_history, rewritten=rewritten)
                                 reply_post(topic_id=topic.id, raw=answer)
                                 task.done()
