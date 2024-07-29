@@ -6,6 +6,9 @@ from ob_dba_agent.web.logger import logger
 
 import subprocess
 import datetime
+import random
+random.seed(datetime.datetime.now().timestamp())
+
 from ob_dba_agent.web.utils import FORUM_API_USERNAME
 
 from ob_dba_agent.web.utils import (
@@ -14,7 +17,6 @@ from ob_dba_agent.web.utils import (
     extract_bundle,
     download_file,
 )
-
 
 
 log_analyze_msg = """用户上传的文件 {file_name} 解压后的目录结构和使用 obdiag 进行离线日志分析后得到的结果如下 (用 === 包裹):
@@ -51,10 +53,12 @@ def handle_task(
             new_task.done()
             filters = [
                 schemas.Task.task_type == task_type,
-                schemas.Task.task_status.in_([
-                    schemas.Task.Status.Pending.value,
-                    schemas.Task.Status.Processing.value,
-                ]),
+                schemas.Task.task_status.in_(
+                    [
+                        schemas.Task.Status.Pending.value,
+                        schemas.Task.Status.Processing.value,
+                    ]
+                ),
             ]
             if new_task.topic_id:
                 filters.append(schemas.Task.topic_id == new_task.topic_id)
@@ -63,6 +67,12 @@ def handle_task(
             exist: schemas.Task | None = db.query(schemas.Task).filter(*filters).first()
             if exist:
                 exist.canceled()
+
+    if "gray_rate" in kwargs:
+        gray_rate = float(kwargs["gray_rate"]) * 100
+        rand_number = random.randrange(0, 100)
+        if rand_number > gray_rate:
+            new_task.done()
 
     try:
         db.add(new_task)
