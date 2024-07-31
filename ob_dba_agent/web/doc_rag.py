@@ -93,7 +93,8 @@ def doc_search(query: str, chat_history: list[dict] = [], **kwargs) -> DocSearch
     )
     analyzing_output: OutputObject = analyzing_agent.run(input=query, **kwargs)
     for key in analyzing_output.to_dict().keys():
-        logger.info(f"key: {key}, value: {analyzing_output.get_data(key)}")
+        logger.debug(f"key: {key}, value: {analyzing_output.get_data(key)}")
+
     output_json_str: str = analyzing_output.get_data("output", "{{}}")
     # The output of LLM is probably ```json{...}```
     output_json_str = output_json_str.replace("```json", "").replace("```", "")
@@ -104,7 +105,7 @@ def doc_search(query: str, chat_history: list[dict] = [], **kwargs) -> DocSearch
     if not any("oceanbase" in db_name for db_name in db_names):
         db_names.append(f"oceanbase-{oceanbase_version}")
 
-    print(f"db_names: {db_names}")
+    logger.debug(f"db_names: {db_names}")
 
     length_limit = kwargs.get("length_limit", 5000)
     knowledge: Knowledge = KnowledgeManager().get_instance_obj("ob_doc_knowledge")
@@ -146,9 +147,7 @@ def doc_rag(query: str, chat_history: list[dict] = [], **kwargs) -> str:
     search_res: DocSearchResult = doc_search(
         rewritten, chat_history, supported_components=components, **kwargs
     )
-    print(f"search_res.documents: {search_res.documents}")
-    print(f"search_res.references: {search_res.references}")
-    return
+    logger.debug(f"search_res.documents: {search_res.documents}")
     answer = chat_with_bot(query, chat_history, search_res.documents)
 
     return answer + search_res.references
