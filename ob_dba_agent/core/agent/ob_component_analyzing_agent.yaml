@@ -1,0 +1,17 @@
+info:
+  name: "ob_component_analyzing_agent"
+  description: "ob_component_analyzing_agent"
+profile:
+  prompt_version: ob_component_analyzing_agent.cn
+  llm_model:
+    name: "qwen_llm"
+    temperature: 0.1
+plan:
+  planner:
+    name: "planning_planner"
+memory:
+  name: "default_memory"
+metadata:
+  type: "AGENT"
+  module: "ob_dba_agent.core.agent.ob_rag_agent"
+  class: "ObRagAgent"
