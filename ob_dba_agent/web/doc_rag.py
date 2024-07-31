@@ -58,7 +58,7 @@ def chat_with_bot(
 replace_bases = {
     "./oceanbase-doc": "https://github.com/oceanbase/oceanbase-doc/blob/V",
     "./ocp-doc": "https://github.com/oceanbase/ocp-doc/blob/V",
-    "./obd-doc": "https://github.com/oceanbase/ocp-doc/blob/V",
+    "./obd-doc": "https://github.com/oceanbase/obd-doc/blob/V",
     "./miniob": "https://github.com/oceanbase/miniob/blob/"
 }
 
