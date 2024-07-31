@@ -59,12 +59,14 @@ replace_bases = {
     "./oceanbase-doc": "https://github.com/oceanbase/oceanbase-doc/blob/V",
     "./ocp-doc": "https://github.com/oceanbase/ocp-doc/blob/V",
     "./obd-doc": "https://github.com/oceanbase/ocp-doc/blob/V",
+    "./miniob": "https://github.com/oceanbase/ocp-doc/blob/"
 }
 
 comp_doc_bases = {
     "oceanbase": "./oceanbase-doc",
     "ocp": "./ocp-doc",
     "obd": "./obd-doc",
+    "miniob": "./miniob",
 }
 
 
@@ -88,22 +90,24 @@ def get_url_replacer(components: list[str]) -> Callable[[str], str]:
 
 
 def doc_search(query: str, chat_history: list[dict] = [], **kwargs) -> DocSearchResult:
-    analyzing_agent: Agent = AgentManager().get_instance_obj(
-        "ob_component_analyzing_agent"
-    )
-    analyzing_output: OutputObject = analyzing_agent.run(input=query, **kwargs)
-    for key in analyzing_output.to_dict().keys():
-        logger.debug(f"key: {key}, value: {analyzing_output.get_data(key)}")
+    db_names = kwargs.get("supported_components", ["oceanbase-4.3.1"])
+    if len(db_names) > 1:    
+        analyzing_agent: Agent = AgentManager().get_instance_obj(
+            "ob_component_analyzing_agent"
+        )
+        analyzing_output: OutputObject = analyzing_agent.run(input=query, **kwargs)
+        for key in analyzing_output.to_dict().keys():
+            logger.debug(f"key: {key}, value: {analyzing_output.get_data(key)}")
 
-    output_json_str: str = analyzing_output.get_data("output", "{{}}")
-    # The output of LLM is probably ```json{...}```
-    output_json_str = output_json_str.replace("```json", "").replace("```", "")
-    output_json: dict = json.loads(output_json_str)
-    db_names: list[str] = output_json.get("components", [])
-    oceanbase_version = output_json.get("oceanbase", "4.3.1")
+        output_json_str: str = analyzing_output.get_data("output", "{{}}")
+        # The output of LLM is probably ```json{...}```
+        output_json_str = output_json_str.replace("```json", "").replace("```", "")
+        output_json: dict = json.loads(output_json_str)
+        db_names: list[str] = output_json.get("components", [])
+        oceanbase_version = output_json.get("oceanbase", "4.3.1")
 
-    if not any("oceanbase" in db_name for db_name in db_names):
-        db_names.append(f"oceanbase-{oceanbase_version}")
+        if not any("oceanbase" in db_name for db_name in db_names):
+            db_names.append(f"oceanbase-{oceanbase_version}")
 
     logger.debug(f"db_names: {db_names}")
 

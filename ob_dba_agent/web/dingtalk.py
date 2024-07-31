@@ -18,12 +18,13 @@ from ob_dba_agent.web.schemas import DingtalkMsg
 dingtalk_app = FastAPI()
 
 
-def handle_dingtalk_msg(query: str) -> str:
+def handle_dingtalk_msg(query: str, query_dbs: list[str] = ["oceanbase-4.3.1"]) -> str:
     ic = classify_intention(query)
     if ic.intention == "闲聊":
         return chat_with_bot(query)
     else:
         return doc_rag(ic.rewritten)
+
 
 class TextMsg(BaseModel):
     content: str
@@ -90,12 +91,45 @@ def send_msg(
     )
 
 
+@dingtalk_app.post("/miniob")
+async def miniob(
+    request: QueryRequest, token: Annotated[Union[str, None], Header()] = None
+):
+    if token is None or token != DINGTALK_TOKEN:
+        return JSONResponse(content={"msg": "Unauthorized"}, status_code=401)
+    if request.msgtype != "text":
+        return JSONResponse(content={"msg": "Invalid request"}, status_code=400)
+    if request.msgtype == "text" and request.text is None:
+        return JSONResponse(content={"msg": "Invalid request"}, status_code=400)
+
+    query_content = request.text.content
+    webhook_splits = request.sessionWebhook.split("?")
+    webhook_url, session = webhook_splits[0], webhook_splits[1].split("=")[1]
+
+    def query_and_reply():
+        answer = handle_dingtalk_msg(query_content, ["miniob-main"])
+        logger.debug(f"[DingTalk] Answer for {query_content} is:\n{answer}")
+        send_msg(
+            webhook_url,
+            session,
+            f"@{request.senderNick}，你的提问是: {query_content}\n\n回答如下:\n\n{answer}",
+            title="xvx! 回答已生成!",
+        )
+
+    threading.Thread(target=query_and_reply).start()
+
+    return {
+        "text": {"content": f"x!x @{request.senderNick} 正在查询，请稍候..."},
+        "msgtype": "text",
+    }
+
+
 @dingtalk_app.post("/query")
 async def query(
     request: QueryRequest, token: Annotated[Union[str, None], Header()] = None
 ):
-    # if token is None or token != DINGTALK_TOKEN:
-    #     return JSONResponse(content={"msg": "Unauthorized"}, status_code=401)
+    if token is None or token != DINGTALK_TOKEN:
+        return JSONResponse(content={"msg": "Unauthorized"}, status_code=401)
     logger.info(request)
 
     if request.msgtype == "text" and request.text is None:
@@ -136,7 +170,7 @@ async def query(
                     created_at=datetime.datetime.now(),
                 )
                 start = datetime.datetime.now()
-                
+
                 answer = handle_dingtalk_msg(query_content)
                 logger.debug(f"[DingTalk] Answer for {query_content} is:\n{answer}")
                 msg.answer = answer
@@ -146,11 +180,11 @@ async def query(
                     f"@{request.senderNick}，你的提问是: {query_content}\n\n回答如下:\n\n{answer}",
                     title="xvx! 回答已生成!",
                 )
-                msg.status = 'done'
+                msg.status = "done"
             except Exception:
                 logger.error(traceback.format_exc())
                 send_msg(webhook_url, session, f"x_x 查询失败")
-                msg.status = 'failed'
+                msg.status = "failed"
             finally:
                 end = datetime.datetime.now()
                 delta = end - start
@@ -165,8 +199,10 @@ async def query(
         "msgtype": "text",
     }
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from agentuniverse.base.agentuniverse import AgentUniverse
+
     AgentUniverse().start()
     print(handle_dingtalk_msg("今天天气怎么样"))
     print(handle_dingtalk_msg("OceanBase 的分布式架构是如何的?"))
