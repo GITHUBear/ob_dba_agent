@@ -38,7 +38,15 @@ instruction: |
     "components": []
   }}
 
-  示例 3: (假设支持的 oceanbase 版本号包含 4.2.1 和 4.3.1, ocp 版本号包含 4.3.0)
+  示例 3: (假设支持的 oceanbase 版本号包含 4.2.1，miniob 版本号包括 main)
+  用户问题: miniob 的系统架构是怎样的？
+  输出:
+  {{
+    "oceanbase": "4.2.1",
+    "components": ["miniob-main"]
+  }}
+
+  示例 4: (假设支持的 oceanbase 版本号包含 4.2.1 和 4.3.1, ocp 版本号包含 4.3.0)
   用户问题如下：
   OCP所在的机器重启了，如何恢复OCP的所有服务？
   【 使用环境 】生产环境

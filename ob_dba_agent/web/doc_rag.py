@@ -168,4 +168,4 @@ if __name__ == "__main__":
     # print(doc_rag("oceanbase社区版本V4.2.1， OCP进程死掉，无法重启"))
     # print(doc_rag("当某个普通租户的memstore使用达到闯值后，选择合并或者转储的依据是什么？"))
     # print(doc_rag("miniob 的系统架构是如何的？", ['miniob-main']))
-    print(doc_rag("miniob 的 double write buffer 是什么？", ['miniob-main']))
+    print(doc_rag("miniob 的 double write buffer 是什么？", components=['miniob-main']))

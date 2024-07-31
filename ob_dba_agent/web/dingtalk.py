@@ -18,12 +18,12 @@ from ob_dba_agent.web.schemas import DingtalkMsg
 dingtalk_app = FastAPI()
 
 
-def handle_dingtalk_msg(query: str, query_dbs: list[str] = ["oceanbase-4.3.1"]) -> str:
+def handle_dingtalk_msg(query: str, **kwargs) -> str:
     ic = classify_intention(query)
     if ic.intention == "闲聊":
         return chat_with_bot(query)
     else:
-        return doc_rag(ic.rewritten, components=query_dbs)
+        return doc_rag(ic.rewritten, **kwargs)
 
 
 class TextMsg(BaseModel):
@@ -107,7 +107,7 @@ async def miniob(
     webhook_url, session = webhook_splits[0], webhook_splits[1].split("=")[1]
 
     def query_and_reply():
-        answer = handle_dingtalk_msg(query_content, ["miniob-main"])
+        answer = handle_dingtalk_msg(query_content, components=["miniob-main"])
         logger.debug(f"[DingTalk] Answer for {query_content} is:\n{answer}")
         send_msg(
             webhook_url,
