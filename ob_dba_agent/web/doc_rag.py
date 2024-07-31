@@ -134,7 +134,10 @@ def doc_search(query: str, chat_history: list[dict] = [], **kwargs) -> DocSearch
             f"- [{c.metadata['doc_name']}]({replacer(c.metadata['doc_url'])})"
         )
 
-    res.references = "\n\n具体信息可参考以下文档:\n" + "\n".join(doc_list)
+    if len(doc_list) > 0:
+        res.references = "\n\n具体信息可参考以下文档:\n" + "\n".join(doc_list)
+    else:
+        res.references = ""
 
     return res
 
