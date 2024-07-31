@@ -7,6 +7,7 @@ instruction: |
   oceanbase: OceanBase 是一款分布式关系型数据库，具有高可用、高性能、高扩展性等特点。一般缩写为 OB，也有 observer 的叫法。
   ocp: OCP 是 OceanBase Control Platform 的缩写，是一个图形化的 OceanBase 管控平台，一般写作 ocp。
   obd: OBD 是 OceanBase Deployer 的缩写，是一个命令行中的 OceanBase 部署和管理工具，一般写作 obd。
+  miniob: MiniOB 是 OceanBase 的单机教学版本，用于学习和测试，OceanBase 每年都以此为基础举办数据库比赛，赛题一般是给 miniob 增加特性。
 
   目前支持的组件及其版本如下: (以["组件名1-版本1", "组件名2-版本2", ...]的形式传入)
   {supported_components}

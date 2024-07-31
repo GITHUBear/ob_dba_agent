@@ -23,7 +23,7 @@ def handle_dingtalk_msg(query: str, query_dbs: list[str] = ["oceanbase-4.3.1"]) 
     if ic.intention == "闲聊":
         return chat_with_bot(query)
     else:
-        return doc_rag(ic.rewritten)
+        return doc_rag(ic.rewritten, components=query_dbs)
 
 
 class TextMsg(BaseModel):

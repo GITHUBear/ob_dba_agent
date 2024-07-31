@@ -4,6 +4,8 @@ target: |
 instruction: |
   用户可能会向你提出有关 OceanBase 的问题，也可能会进行闲聊。其中，OceanBase 的问题也区分为多种类型，有些是特性问题，有些是诊断问题，其中特性问题可以通过查阅文档回答，而诊断问题需要更多的信息才能回答，例如用户的 OceanBase 日志。
 
+  注意，包含类似(大小写等区别)下列关键词的也属于 OceanBase 的问题：OceanBase、ob、OB、observer、MiniOB、ocp、obd、oms、odc、ob-operator、obshell、obproxy
+
   其中诊断问题通常包含了用户的具体使用场景，例如用户在自己的环境中使用 OceanBase 遇到了问题，而特性问题往往是宏观的、抽象的问题，例如 OceanBase 的分布式架构是怎样的。
 
   请根据用户的提问，判断用户的问题类型，并将问题分类为以下几类：

@@ -59,7 +59,7 @@ replace_bases = {
     "./oceanbase-doc": "https://github.com/oceanbase/oceanbase-doc/blob/V",
     "./ocp-doc": "https://github.com/oceanbase/ocp-doc/blob/V",
     "./obd-doc": "https://github.com/oceanbase/ocp-doc/blob/V",
-    "./miniob": "https://github.com/oceanbase/ocp-doc/blob/"
+    "./miniob": "https://github.com/oceanbase/miniob/blob/"
 }
 
 comp_doc_bases = {
@@ -164,6 +164,8 @@ if __name__ == "__main__":
     from agentuniverse.base.agentuniverse import AgentUniverse
 
     AgentUniverse().start()
-    print(doc_rag("OCP所在的机器重启了，如何恢复OCP的所有服务？"))
+    # print(doc_rag("OCP所在的机器重启了，如何恢复OCP的所有服务？"))
     # print(doc_rag("oceanbase社区版本V4.2.1， OCP进程死掉，无法重启"))
     # print(doc_rag("当某个普通租户的memstore使用达到闯值后，选择合并或者转储的依据是什么？"))
+    # print(doc_rag("miniob 的系统架构是如何的？", ['miniob-main']))
+    print(doc_rag("miniob 的 double write buffer 是什么？", ['miniob-main']))
