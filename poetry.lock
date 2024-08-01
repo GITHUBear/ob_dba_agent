@@ -2310,6 +2310,27 @@ url = "https://pypi.org/simple"
 reference = "pipy"
 
 [[package]]
+name = "langchain-openai"
+version = "0.1.0"
+description = "An integration package connecting OpenAI and LangChain"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "langchain_openai-0.1.0-py3-none-any.whl", hash = "sha256:3cb3da679da9bc33c20634a5a64e65e1f1d9f69a8b71e8622297d8c33623e8d6"},
+    {file = "langchain_openai-0.1.0.tar.gz", hash = "sha256:96bb825be484a19cd0586725856bd159e3ed47d31ad95c6d160852abcb938ae2"},
+]
+
+[package.dependencies]
+langchain-core = ">=0.1.33,<0.2.0"
+openai = ">=1.10.0,<2.0.0"
+tiktoken = ">=0.5.2,<1"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pipy"
+
+[[package]]
 name = "langchain-text-splitters"
 version = "0.0.2"
 description = "LangChain text splitting utilities"
@@ -6719,4 +6740,4 @@ reference = "pipy"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c5229e2b1435287d22edf7972baf648f354a6bcf9fe4b4893e289b199f76d975"
+content-hash = "418de723a36e388bb3d7d4e6248e1e17f1a05723d7f4e31e40538c8fb95e7951"

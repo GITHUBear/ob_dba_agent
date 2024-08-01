@@ -2,7 +2,10 @@
 name = "ob-dba-agent"
 version = "0.1.0"
 description = ""
-authors = ["shanhaikang.shk <shanhaikang.shk@oceanbase.com>"]
+authors = [
+  "shanhaikang.shk <shanhaikang.shk@oceanbase.com>",
+  "yuyi.wsy <yuyi.wsy@oceanbase.com>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -15,9 +18,10 @@ pydantic = "^2.8.2"
 fastapi = "^0.111.0"
 pytesseract = "^0.3.10"
 bs4 = "^0.0.2"
+langchain-openai = "0.1.0"
 
 [[tool.poetry.source]]
-name = "china"
+name = "antfin"
 url = "https://pypi.antfin-inc.com/simple/"
 priority = "supplemental"
 

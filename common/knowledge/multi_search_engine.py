@@ -1,5 +1,5 @@
 from typing import List
-from pymilvus import MilvusClient, FieldSchema, DataType, CollectionSchema, Collection
+from pymilvus import MilvusClient
 import logging
 import os
 from .engine_base import EngineBase
@@ -24,9 +24,9 @@ class MultiSearchEngine(EngineBase):
                     os.path.join(self.config.milvus_db_store, name),
                 )
             )
-        self._create_clients()
+        self.__create_clients()
 
-    def _create_clients(self):
+    def __create_clients(self):
         self.clients = {
             db_name: MilvusClient(db_file) for (db_name, db_file) in self.db_files
         }
@@ -106,6 +106,8 @@ class MultiSearchEngine(EngineBase):
             same_doc_idxs.append(same_doc_idx)
         return results, same_doc_idxs
 
+
+engine = MultiSearchEngine(logging.getLogger(__name__))
 
 if __name__ == "__main__":
     import logging
