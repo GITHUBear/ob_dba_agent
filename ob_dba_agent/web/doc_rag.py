@@ -91,7 +91,7 @@ def get_url_replacer(components: list[str]) -> Callable[[str], str]:
 
 def doc_search(query: str, chat_history: list[dict] = [], **kwargs) -> DocSearchResult:
     db_names = kwargs.get("supported_components", ["oceanbase-4.3.1"])
-    if len(db_names) > 1:    
+    if len(db_names) > 2:
         analyzing_agent: Agent = AgentManager().get_instance_obj(
             "ob_component_analyzing_agent"
         )
