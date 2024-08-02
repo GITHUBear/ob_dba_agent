@@ -1,5 +1,0 @@
-name: 'ob_dba_peer_agent'
-description: 'OceanBase PEER Agent'
-agent: 'ob_dba_peer_agent'
-metadata:
-  type: 'SERVICE'

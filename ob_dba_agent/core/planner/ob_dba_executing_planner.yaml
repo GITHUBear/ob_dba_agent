@@ -1,6 +1,0 @@
-name: 'ob_dba_executing_planner'
-description: 'oceanbase dba executing planner'
-metadata:
-  type: 'PLANNER'
-  module: 'ob_dba_agent.core.planner.ob_dba_executing_planner'
-  class: 'ObDBAExecutingPlanner'

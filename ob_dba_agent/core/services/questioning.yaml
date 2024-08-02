@@ -1,5 +1,0 @@
-name: 'ob_dba_questioning_agent'
-description: 'OceanBase Question Agent'
-agent: 'ob_dba_questioning_agent'
-metadata:
-  type: 'SERVICE'
