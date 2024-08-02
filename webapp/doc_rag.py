@@ -27,8 +27,8 @@ class DocSearchResult:
 def classify_intention(
     query: str, chat_history: list[dict] = []
 ) -> ClassifyIntentionResult:
-    output_object: dict[str, any] = guard_agent.invoke(
-        input=query,
+    output_object: dict[str, any] = guard_agent.invoke_json(
+        query,
         history=chat_history,
     )
     ic = ClassifyIntentionResult()

@@ -1,5 +1,5 @@
 from typing import List
-from .document import Document, Chunk
+from common.knowledge.document import Document, Chunk
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from abc import ABC, abstractmethod
 

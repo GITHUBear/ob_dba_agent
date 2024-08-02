@@ -9,3 +9,4 @@ jsons/
 downloaded/
 uploaded/
 *.log
+.env

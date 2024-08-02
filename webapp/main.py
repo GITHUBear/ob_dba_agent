@@ -5,10 +5,6 @@ import threading
 from typing import Union
 from typing_extensions import Annotated
 
-
-from agentuniverse.base.agentuniverse import AgentUniverse
-from agentuniverse.agent_serve.service_manager import ServiceManager
-
 from webapp.logger import logger
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, BackgroundTasks, Header
@@ -23,9 +19,9 @@ from webapp.dingtalk import dingtalk_app
 
 Base.metadata.create_all(bind=engine)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    AgentUniverse().start()
     # Before the app starts
     for i in range(int(os.environ.get("WORKER_COUNT", 1))):
         threading.Thread(target=task_worker, args=(i,), daemon=True).start()
@@ -38,6 +34,7 @@ app = FastAPI(lifespan=lifespan)
 # app = FastAPI()
 
 app.mount("/dingtalk", dingtalk_app)
+
 
 @app.post("/repost/entry")
 async def repost_entry(
@@ -79,8 +76,3 @@ async def repost_entry(
         return "ok"
     task = handle_task(db, **kwargs)
     return task.id
-
-
-@app.get("/services")
-async def get_services() -> list[str]:
-    return ServiceManager().get_instance_name_list()

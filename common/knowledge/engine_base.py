@@ -1,25 +1,23 @@
-from .search_engine_config import SearchEngineConfig
+from common.knowledge.search_engine_config import SearchEngineConfig
 from FlagEmbedding import BGEM3FlagModel
 from typing import List
-from pymilvus import MilvusClient, FieldSchema, DataType, CollectionSchema, Collection
 import logging
 import threading
-import os
 
-_model = None
+__model = None
 
 
 def get_model(model_args: SearchEngineConfig):
-    global _model
-    if _model is not None:
-        return _model
-    _model = BGEM3FlagModel(
+    global __model
+    if __model is not None:
+        return __model
+    __model = BGEM3FlagModel(
         model_name_or_path=model_args.encoder_name,
         pooling_method=model_args.pooling_method,
         normalize_embeddings=model_args.normalize_embeddings,
         use_fp16=model_args.use_fp16,
     )
-    return _model
+    return __model
 
 
 def parse_semver(ver: str):
@@ -30,11 +28,13 @@ def parse_semver(ver: str):
 
 
 class EngineBase:
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger | None = None, **kwargs):
         config = SearchEngineConfig()
         self.config = config
-        self.db_file = config.milvus_db_file
-        self.collection_name = config.milvus_corpus_collection_name
+        self.db_file = kwargs.get("db_file", config.milvus_db_file)
+        self.collection_name = kwargs.get(
+            "collection_name", config.milvus_corpus_collection_name
+        )
         self.bge_lock = threading.Lock()
         self.bge_m3_model = get_model(config)
 
@@ -47,7 +47,7 @@ class EngineBase:
         self.sparse_weight = config.sparse_weight
         self.colbert_weight = config.colbert_weight
         self.dense_dim = config.milvus_dense_dim
-        self.logger = logger
+        self.logger = logger or logging.getLogger(__name__)
 
     def _embed(self, texts: List[str], use_dense: bool, use_sparse: bool):
         with self.bge_lock:

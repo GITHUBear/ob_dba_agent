@@ -28,10 +28,3 @@ def walk_dir(dir_path):
                 convert_headings(os.path.join(root, file))
         for dir in dirs:
             walk_dir(os.path.join(root, dir))
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        exit("Please provide a file or directory path as an argument")
-
-    walk_dir(sys.argv[1])

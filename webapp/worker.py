@@ -201,7 +201,7 @@ def task_worker(no: int, **kwargs):
                                 processed=True)
                             db.add(saved_search)
                             
-                            answer = obdiag_agent.invoke(input=rewritten, documents_snippets=docs.documents)
+                            answer = obdiag_agent.invoke(rewritten, documents_snippets=docs.documents)
                             answer += ('\n\n'+docs.references)
                             answer += ('\n\n'+'附上敏捷诊断工具 [obdiag 使用帮助链接](https://ask.oceanbase.com/t/topic/35605619)')
                             reply_post(topic_id=topic.id, raw=answer)
@@ -211,17 +211,17 @@ def task_worker(no: int, **kwargs):
                             logger.debug("questioning agent: query content: {query_content}, chat history: {chat_history}")
                             polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
                             output_object = questioning_agent.invoke_json(
-                                input=query_content, 
+                                query_content, 
                                 history=polished_history
                             )
-                            complete = output_object.get_data("complete")
+                            complete = output_object.get("complete", True)
                             logger.debug(f"问题{"可解决" if complete else "不可解决"}")
                             if complete or chat_turns >= 2:
                                 answer = doc_rag(query_content, chat_history, rewritten=rewritten)
                                 reply_post(topic_id=topic.id, raw=answer)
                                 task.done()
                             else:
-                                questions = output_object.get_data("questions")
+                                questions = output_object.get("questions")
                                 for i, q in enumerate(questions):
                                     questions[i] = f"{i + 1}. {q}"
                                 

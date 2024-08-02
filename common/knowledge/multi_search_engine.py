@@ -2,7 +2,7 @@ from typing import List
 from pymilvus import MilvusClient
 import logging
 import os
-from .engine_base import EngineBase
+from common.knowledge.engine_base import EngineBase
 
 
 def parse_semver(ver: str):
@@ -13,8 +13,8 @@ def parse_semver(ver: str):
 
 
 class MultiSearchEngine(EngineBase):
-    def __init__(self, logger: logging.Logger):
-        super().__init__(logger)
+    def __init__(self, logger: logging.Logger | None = None, **kwargs):
+        super().__init__(logger, **kwargs)
 
         self.db_files = []
         for name in os.listdir(self.config.milvus_db_store):

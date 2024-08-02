@@ -1,9 +1,9 @@
 import os
 import logging
 from abc import ABC, abstractmethod
-from .document import DocumentBase, Document
-from .md_splitter import LocalFsMdSplitter
-from .search_engine import MilvusSearchEngine
+from common.knowledge.document import DocumentBase, Document
+from common.knowledge.md_splitter import LocalFsMdSplitter
+from common.knowledge.search_engine import MilvusSearchEngine
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -13,9 +13,9 @@ class DocBaseLoader(ABC):
         pass
 
 class LocalFsDocBaseMilvusLoader(DocBaseLoader):
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-        self.engine = MilvusSearchEngine(logger)
+    def __init__(self, logger: logging.Logger | None = None, **kwargs):
+        self.logger = logger or logging.getLogger(__name__)
+        self.engine = MilvusSearchEngine(logger, **kwargs)
 
     def load_doc_base(self, doc_base: DocumentBase, checkpoint = 0):
         md_splitter = LocalFsMdSplitter()

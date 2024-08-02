@@ -1263,6 +1263,25 @@ url = "https://pypi.org/simple"
 reference = "pipy"
 
 [[package]]
+name = "fire"
+version = "0.6.0"
+description = "A library for automatically generating command line interfaces."
+optional = false
+python-versions = "*"
+files = [
+    {file = "fire-0.6.0.tar.gz", hash = "sha256:54ec5b996ecdd3c0309c800324a0703d6da512241bc73b553db959d98de0aa66"},
+]
+
+[package.dependencies]
+six = "*"
+termcolor = "*"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pipy"
+
+[[package]]
 name = "flagembedding"
 version = "1.2.10"
 description = "FlagEmbedding"
@@ -5495,6 +5514,25 @@ url = "https://pypi.org/simple"
 reference = "pipy"
 
 [[package]]
+name = "termcolor"
+version = "2.4.0"
+description = "ANSI color formatting for output in terminal"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "termcolor-2.4.0-py3-none-any.whl", hash = "sha256:9297c0df9c99445c2412e832e882a7884038a25617c60cea2ad69488d4040d63"},
+    {file = "termcolor-2.4.0.tar.gz", hash = "sha256:aab9e56047c8ac41ed798fa36d892a37aca6b3e9159f3e0c24bc64a9b3ac7b7a"},
+]
+
+[package.extras]
+tests = ["pytest", "pytest-cov"]
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pipy"
+
+[[package]]
 name = "threadpoolctl"
 version = "3.5.0"
 description = "threadpoolctl"
@@ -6740,4 +6778,4 @@ reference = "pipy"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "418de723a36e388bb3d7d4e6248e1e17f1a05723d7f4e31e40538c8fb95e7951"
+content-hash = "a3bf6faf470284a312f03e4b26e1876acbd6ea5ff1f032028c4be2a008f09e44"

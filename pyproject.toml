@@ -19,6 +19,7 @@ fastapi = "^0.111.0"
 pytesseract = "^0.3.10"
 bs4 = "^0.0.2"
 langchain-openai = "0.1.0"
+fire = "^0.6.0"
 
 [[tool.poetry.source]]
 name = "antfin"

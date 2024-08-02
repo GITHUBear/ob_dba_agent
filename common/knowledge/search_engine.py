@@ -1,13 +1,14 @@
-from .document import Chunk
-from typing import List
-from pymilvus import MilvusClient, FieldSchema, DataType, CollectionSchema, Collection
 import logging
-from .engine_base import EngineBase
+
+from typing import List
+from common.knowledge.document import Chunk
+from common.knowledge.engine_base import EngineBase
+from pymilvus import MilvusClient, FieldSchema, DataType, CollectionSchema, Collection
 
 
 class MilvusSearchEngine(EngineBase):
-    def __init__(self, logger: logging.Logger):
-        super().__init__(logger)
+    def __init__(self, logger: logging.Logger | None = None, **kwargs):
+        super().__init__(logger, **kwargs)
         self._create_collections()
 
     def _create_collections(self):
