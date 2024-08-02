@@ -1,5 +1,5 @@
-from ob_dba_agent.web.database import SessionLocal
-from ob_dba_agent.web.schemas import *
+from webapp.database import SessionLocal
+from webapp.schemas import *
 
 if __name__ == '__main__':
     with SessionLocal() as db:

@@ -11,47 +11,40 @@ from webapp.doc_rag import doc_rag, classify_intention, doc_search
 
 from common.agents.questioning_agent import questioning_agent
 from common.agents.obdiag_agent import obdiag_agent
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 
 class ChatHistory:
     
-    class Role:
-        User = "用户"
-        Bot = "机器人"
-    
-
-    def __init__(self, chat_history: list[dict] = []):
+    def __init__(self, chat_history: list[BaseMessage] = []):
         self.chat_history = chat_history
 
 
     def get_turns(self) -> int:
         turns = 0
         for talk in self.chat_history:
-            if talk["角色"] == self.Role.Bot:
+            if talk.type == AIMessage.type:
                 turns += 1
 
         return turns
 
-    def add_chat(self, role: str, content: str):
-        self.chat_history.append({
-            "角色": role,
-            "发言": content,
-        })
+    def add_chat(self, msg: BaseMessage):
+        self.chat_history.append(msg)
     
     
     def add_topic_title(self, title: str):
         if len(self.chat_history) > 0:
-            self.chat_history[0]["发言"] = title + "\n" + self.chat_history[0]["发言"]
+            self.chat_history[0].content = title + "\n" + self.chat_history[0].content
 
     
     def pop_latest_user_query(self) -> str:
-        messages: list = []
+        messages: list[BaseMessage] = []
         while len(self.chat_history) > 0:
-            if self.chat_history[-1]["角色"] == "用户":
+            if self.chat_history[-1].type == HumanMessage.type:
                 talk = self.chat_history.pop()
-                messages.append(talk["发言"])
+                messages.append(talk.content)
             else:
                 break
-        return "\n".join(messages)
+        return "\n".join(map(lambda m: m.content, messages))
 
 
 def task_worker(no: int, **kwargs):
@@ -129,9 +122,9 @@ def task_worker(no: int, **kwargs):
                 
                 for p in posts:
                     if p.username == bot_name:
-                        history.add_chat(ChatHistory.Role.Bot, p.raw)
+                        history.add_chat(AIMessage(p.raw))
                     else:
-                        history.add_chat(ChatHistory.Role.User, '\n'.join([p.raw, post_extra_content[p.id]]))
+                        history.add_chat(HumanMessage('\n'.join([p.raw, post_extra_content[p.id]])))
 
                 history.add_topic_title(topic.title)
                 

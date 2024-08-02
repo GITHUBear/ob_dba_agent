@@ -1,3 +1,5 @@
+import os
+import sys
 import datetime
 import hashlib
 import logging
@@ -15,8 +17,10 @@ class AgentBase:
         default_name = f"Agent-{hashlib.md5(self.__prompt.encode()).hexdigest()}"
         self.__name: str = kwargs.pop("name", default_name)
         self.logger = logging.getLogger(self.__name)
-
-        log_level = logging.getLevelNamesMapping().get(kwargs.pop("log_level", "DEBUG"))
+        self.logger.addHandler(logging.StreamHandler(sys.stdout))
+        log_level = logging.getLevelNamesMapping().get(
+            kwargs.pop("log_level", os.environ.get("LOG_LEVEL", "DEBUG"))
+        )
         self.logger.setLevel(log_level)
 
         self.model = get_model(**kwargs)

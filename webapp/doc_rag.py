@@ -4,7 +4,7 @@ from common.agents.comp_analyzing_agent import component_analyzing_agent
 from common.knowledge.multi_search_engine import engine
 from common.knowledge.search_engine_config import default_config
 
-from ob_dba_agent.web.logger import logger
+from webapp.logger import logger
 from typing import Callable
 
 import os
