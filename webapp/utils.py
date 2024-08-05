@@ -5,7 +5,6 @@ import os
 from PIL import Image
 import zipfile
 import tarfile
-import uuid
 
 import requests
 import json
@@ -17,6 +16,7 @@ from os import path
 DOWNLOAD_SAVE_FOLDER = os.environ.get("DOWNLOAD_SAVE_FOLDER", "./downloaded")
 FORUM_API_KEY = os.environ.get("FORUM_API_KEY")
 FORUM_API_USERNAME = os.environ.get("FORUM_BOT_NAME", "汤圆")
+FORUM_API_USER_ID = int(os.environ.get("FORUM_API_USER_ID", "1"))
 FORUM_URL = os.environ.get("FORUM_API_URL", "https://ask-pre.oceanbase.com")
 
 os.makedirs(DOWNLOAD_SAVE_FOLDER, exist_ok=True)

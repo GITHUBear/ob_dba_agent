@@ -50,10 +50,10 @@ class ChatHistory:
 def task_worker(no: int, **kwargs):
     logger.info(f"Task worker {no} started")
     debug = kwargs.get("debug", False)
-    bot_name = kwargs.get("bot_name", "汤圆")
+    bot_id = kwargs.get("bot_id", 1)
     while True:
-        try:
-            with SessionLocal() as db:
+        with SessionLocal() as db:
+            try:
                 preds = [Task.task_status.in_([Task.Status.Pending.value, Task.Status.Processing.value]), Task.task_type == "topic"]
                 if not debug:
                     preds.append(Task.triggered_at <= datetime.datetime.now())
@@ -62,7 +62,6 @@ def task_worker(no: int, **kwargs):
                     .filter(*preds)
                     .first()
                 )
-                
                 if task is None:
                     time.sleep(random.randrange(5, 20))
                     continue
@@ -88,7 +87,7 @@ def task_worker(no: int, **kwargs):
                     db.query(Post)
                     .where(
                         Post.topic_id == task.topic_id,
-                        Post.username.in_([topic.creator_username, bot_name]),
+                        Post.sender_id.in_([topic.creator_id, bot_id]),
                     )
                     .order_by(Post.post_number)
                     .all()
@@ -100,7 +99,7 @@ def task_worker(no: int, **kwargs):
                     db.commit()
                     continue
 
-                if posts[-1].username != topic.creator_username:
+                if posts[-1].sender_id != topic.creator_id:
                     # User has not replied
                     logger.info(f"User has not replied topic {topic.id} yet, rescheduling task")
                     task.delay(minutes=random.randrange(5, 20))
@@ -121,7 +120,7 @@ def task_worker(no: int, **kwargs):
                 history = ChatHistory()
                 
                 for p in posts:
-                    if p.username == bot_name:
+                    if p.sender_id == bot_id:
                         history.add_chat(AIMessage(p.raw))
                     else:
                         history.add_chat(HumanMessage('\n'.join([p.raw, post_extra_content[p.id]])))
@@ -156,81 +155,73 @@ def task_worker(no: int, **kwargs):
                     task.done()
                     db.commit()
                 elif topic.llm_classified_to == Topic.Clf.Features.value:
-                    try:
-                        # RAG here
-                        answer = doc_rag(query_content, chat_history, rewritten=rewritten)
-                        logger.debug(answer)
-                        reply_post(topic_id=topic.id, raw=answer)
-                        if chat_turns >= 1:
-                            # At most reply two posts
-                            task.done()
-                        else:
-                            task.processing()
-                            task.delay()
-                    except Exception as e:
-                        traceback.print_exc()
+                    # RAG here
+                    answer = doc_rag(query_content, chat_history, rewritten=rewritten)
+                    logger.debug(answer)
+                    reply_post(topic_id=topic.id, raw=answer)
+                    if chat_turns >= 1:
+                        # At most reply two posts
+                        task.done()
+                    else:
+                        task.processing()
                         task.delay()
-                    finally:
-                        db.commit()
                 elif topic.llm_classified_to == Topic.Clf.Diagnostic.value:                
                     log_uploaded = False
                     for f in files:
                         if f.file_type == UploadedFile.FileType.Archive.value and f.processed:
                             log_uploaded = True
                             break
-                    try:
-                        if not log_uploaded and task.task_status == task.Status.Pending.value:
-                            logger.debug(f"obdiag classification agent: {rewritten}")
-                            docs = doc_search(rewritten)
-                            # Persist the search result
-                            content = f"\n根据用户的问题描述查询到的文档如下: (用 === 包裹的部分为搜索结果)\n===\n{docs.documents}\n===\n"
-                            saved_search = UploadedFile(
-                                post_id=posts[-1].id, 
-                                name="search_result", 
-                                path="search_result", 
-                                file_type=UploadedFile.FileType.Docs.value, 
-                                created_at=datetime.datetime.now(), 
-                                content=content,
-                                processed=True)
-                            db.add(saved_search)
-                            
-                            answer = obdiag_agent.invoke(rewritten, documents_snippets=docs.documents)
-                            answer += ('\n\n'+docs.references)
-                            answer += ('\n\n'+'附上敏捷诊断工具 [obdiag 使用帮助链接](https://ask.oceanbase.com/t/topic/35605619)')
-                            reply_post(topic_id=topic.id, raw=answer)
-                            task.processing()
-                            task.delay()
-                        else:
-                            logger.debug("questioning agent: query content: {query_content}, chat history: {chat_history}")
-                            polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
-                            output_object = questioning_agent.invoke_json(
-                                query_content, 
-                                history=polished_history
-                            )
-                            complete = output_object.get("complete", True)
-                            logger.debug(f"问题{"可解决" if complete else "不可解决"}")
-                            if complete or chat_turns >= 2:
-                                answer = doc_rag(query_content, chat_history, rewritten=rewritten)
-                                reply_post(topic_id=topic.id, raw=answer)
-                                task.done()
-                            else:
-                                questions = output_object.get("questions")
-                                for i, q in enumerate(questions):
-                                    questions[i] = f"{i + 1}. {q}"
-                                
-                                answer = "再向您确认几个问题:\n" + '\n'.join(questions)
-                                reply_post(topic_id=topic.id, raw=answer)
-                                task.delay()
-                    except Exception:
-                        traceback.print_exc()
+
+                    if not log_uploaded and task.task_status == task.Status.Pending.value:
+                        logger.debug(f"obdiag classification agent: {rewritten}")
+                        docs = doc_search(rewritten, length_limit=1200)
+                        # Persist the search result
+                        content = f"\n根据用户的问题描述查询到的文档如下: (用 === 包裹的部分为搜索结果)\n===\n{docs.documents}\n===\n"
+                        saved_search = UploadedFile(
+                            post_id=posts[-1].id, 
+                            name="search_result", 
+                            path="search_result", 
+                            file_type=UploadedFile.FileType.Docs.value, 
+                            created_at=datetime.datetime.now(), 
+                            content=content,
+                            processed=True)
+                        db.add(saved_search)
+                        
+                        answer = obdiag_agent.invoke(rewritten, documents_snippets=docs.documents)
+                        answer += ('\n\n'+docs.references)
+                        answer += ('\n\n'+'附上敏捷诊断工具 [obdiag 使用帮助链接](https://ask.oceanbase.com/t/topic/35605619)')
+                        reply_post(topic_id=topic.id, raw=answer)
+                        task.processing()
                         task.delay()
-                    finally:
-                        db.commit()
+                    else:
+                        logger.debug(f"questioning agent: query content: {query_content}, chat history: {chat_history}")
+                        polished_history = list(map(lambda x: {"content": x["发言"], "type": "human" if x["角色"] == '用户' else "ai"}, chat_history))
+                        output_object = questioning_agent.invoke_json(
+                            query_content, 
+                            history=polished_history
+                        )
+                        complete = output_object.get("complete", True)
+                        logger.debug(f"问题{"可解决" if complete else "不可解决"}")
+                        if complete or chat_turns >= 2:
+                            answer = doc_rag(query_content, chat_history, rewritten=rewritten)
+                            reply_post(topic_id=topic.id, raw=answer)
+                            task.done()
+                        else:
+                            questions = output_object.get("questions")
+                            for i, q in enumerate(questions):
+                                questions[i] = f"{i + 1}. {q}"
+                            
+                            answer = "再向您确认几个问题:\n" + '\n'.join(questions)
+                            reply_post(topic_id=topic.id, raw=answer)
+                            task.delay()
 
                 if debug:
                     return
-        except Exception:
-            traceback.print_exc()
+            except Exception:
+                task.failed()
+                traceback.print_exc()
+            finally:
+                db.commit()
             
 
 

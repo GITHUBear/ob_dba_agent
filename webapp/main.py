@@ -13,6 +13,7 @@ from webapp.models import *
 from webapp.schemas import Base
 from webapp.database import engine, get_db
 from webapp.event_handlers import *
+from webapp.utils import FORUM_API_USER_ID, FORUM_API_USERNAME
 from webapp.worker import task_worker
 from webapp.dingtalk import dingtalk_app
 
@@ -24,7 +25,15 @@ Base.metadata.create_all(bind=engine)
 async def lifespan(app: FastAPI):
     # Before the app starts
     for i in range(int(os.environ.get("WORKER_COUNT", 1))):
-        threading.Thread(target=task_worker, args=(i,), daemon=True).start()
+        threading.Thread(
+            target=task_worker,
+            args=(i,),
+            kwargs={
+                "bot_id": FORUM_API_USER_ID,
+                "bot_name": FORUM_API_USERNAME,
+            },
+            daemon=True,
+        ).start()
     yield
     # After the app stops
     pass
